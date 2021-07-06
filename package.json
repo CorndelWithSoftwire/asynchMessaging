@@ -1,0 +1,22 @@
+{
+  "name": "asynchmessaging",
+  "version": "1.0.0",
+  "description": "Messaging and asynchronous communication patterns.",
+  "main": "publish.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/CorndelWithSoftwire/asynchMessaging.git"
+  },
+  "author": "Dave Artus",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/CorndelWithSoftwire/asynchMessaging/issues"
+  },
+  "homepage": "https://github.com/CorndelWithSoftwire/asynchMessaging#readme",
+  "dependencies": {
+    "stomp-client": "^0.9.0"
+  }
+}
