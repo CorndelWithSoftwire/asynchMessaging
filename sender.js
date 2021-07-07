@@ -14,7 +14,7 @@ ActiveMq.getConnection().then(
             mqConnection.disconnect(function () {
               console.log('DISCONNECTED');
            });
-        }, 50000);
+        }, 1000 * 60 * 3);
     }
 ).catch( e => console.log(e) );
 

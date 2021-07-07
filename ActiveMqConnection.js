@@ -22,12 +22,19 @@ var ActiveMqConnection = {
             resolve(connectedClient);
          }
 
-         var myClient = new StompClient(SERVER_ADDRESS, SERVER_PORT, '', '', '1.0');
+         var myClient = new StompClient(
+            SERVER_ADDRESS, SERVER_PORT, 
+            '', '', '1.0', null, 
+            {
+               retries : 50,
+               delay : 1000
+            }
+            );
          myClient.on("connect",
             (e) => console.log("connected " + e)
          );
          myClient.on("reconnecting",
-            (e) => console.log("reconnecting " + e)
+            () => console.log("reconnecting ")
          );
          myClient.on("reconnect",
             (e) => console.log("reconnected " + e)
