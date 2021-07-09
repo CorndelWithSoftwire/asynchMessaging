@@ -1,5 +1,6 @@
 'use strict';
-var StompClient = require("stomp-client");
+
+var StompClient = require("./stomp_client/client.js").StompClient;
 
 // Wrapper for a Stop conenction to ActiveMQ
 //
@@ -27,7 +28,8 @@ var ActiveMqConnection = {
             '', '', '1.0', null, 
             {
                retries : 50,
-               delay : 1000
+               delay : 1000,
+               
             }
             );
          myClient.on("connect",
@@ -40,15 +42,19 @@ var ActiveMqConnection = {
             (e) => console.log("reconnected " + e)
          );
 
+         let resolved = false;
          myClient.connect(
             () => {
                console.log("STOMP client connected.");
                connectedClient = myClient;
+               resolved = true;
                resolve(connectedClient);
             },
             (e) => {
                console.log("connection failed " + e);
-               reject(e);
+               if ( ! resolved ){
+                   reject(e);
+               }
             }
          );
       });
