@@ -1,10 +1,12 @@
 
 ActiveMq = require("./ActiveMqConnection.js");
 
+// Example Consumer
+
 ActiveMq.getConnection().then(
     ( mqConnection  ) => {
         var QUEUE = '/queue/oneway';
-        mqConnection.subscribe(QUEUE, function (data, headers) {
+        mqConnection.subscribe(QUEUE, (data, headers) => {
            console.log('GOT A MESSAGE', data, headers);
         });  
     }
