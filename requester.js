@@ -10,6 +10,7 @@ if (!reqQueueName || reqQueueName.length == 0) {
     reqQueueName = "defaultReq";
 }
 const reqQueueSpec = "/queue/" + reqQueueName;
+const respQueueSpec = reqQueueSpec + "Resp";
 
 
 let requestText = process.argv[3];
@@ -25,14 +26,21 @@ if (!priorityText || priorityText.length == 0) {
 const requestPriority = parseInt(priorityText);
 
 const header = {
-    priority: requestPriority
+    "priority": requestPriority,
+    "reply-to": respQueueSpec,
+    "persistent" : true
 };
 
 ActiveMq.getConnection().then(
     (mqConnection) => {
+        mqConnection.subscribe(respQueueSpec, 
+            (data, headers) => 
+                  console.log('Response', data, headers)
+        );
+
         mqConnection.publish(reqQueueSpec, requestText, header);
         
-        const timeout = 1000; // 1000 * 60 * 3 
+        const timeout = 1000 * 60; // 1000 * 60 * 3 
         setTimeout(() => {
             mqConnection.disconnect(
                 () => console.log('DISCONNECTED')
