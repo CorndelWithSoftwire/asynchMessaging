@@ -33,12 +33,24 @@ const header = {
 
 ActiveMq.getConnection().then(
     (mqConnection) => {
+        let requestList = [];
         mqConnection.subscribe(respQueueSpec, 
-            (data, headers) => 
-                  console.log('Response', data, headers)
+            (data, headers) => {
+                  console.log('Response', data, headers);
+                  let correlationId = headers["correlation-id"];
+                  if ( correlationId && requestList[correlationId] ) {
+                    console.log('correlates ' + requestList[correlationId]);
+                  } else {
+                      console.log("no correlation.")
+                  }
+                }
         );
 
-        mqConnection.publish(reqQueueSpec, requestText, header);
+        for ( let i = 0; i < 2; i++){
+            header["correlation-id"] = i;
+            requestList[i] = "request " + i + ": " + requestText;
+            mqConnection.publish(reqQueueSpec, requestText + "," + i, header);
+        } 
         
         const timeout = 1000 * 60; // 1000 * 60 * 3 
         setTimeout(() => {

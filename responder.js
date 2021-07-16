@@ -19,7 +19,10 @@ ActiveMq.getConnection().then(
            console.log('Request\n', data, headers);
            if ( headers["reply-to"] && headers["reply-to"].length > 0 ){
                // persistent response for persistent request
-               let respHeader = { "persistent": headers["persistent"] };
+               let respHeader = { 
+                   "persistent": headers["persistent"], 
+                   "correlation-id": headers["correlation-id"], 
+                };
 
                // reply to specfified queue
                mqConnection.publish(headers["reply-to"], 'a response to ' + data, respHeader);
