@@ -1,7 +1,7 @@
 
 ActiveMq = require("./ActiveMqConnection.js");
 
-// Example Consumer
+// Example Consumer from Queue
 
 ActiveMq.getConnection().then(
     ( mqConnection  ) => {

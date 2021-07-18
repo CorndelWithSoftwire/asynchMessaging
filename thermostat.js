@@ -1,8 +1,8 @@
 var mqtt = require('async-mqtt');
 var client = mqtt.connect('mqtt://localhost');
 
-let fakeTempSkew = 5;
-let fakeTemp = 18;
+let fakeTempSkew = 15;
+let fakeTemp = 10;
 
 let location = process.argv[2];
 if (!location || location.length == 0) {
@@ -14,7 +14,7 @@ console.log("Thermosts location: " + location);
 // publish a fake thermostat reading every 10 seconds
 setInterval( () => {
     fakeTempSkew++;
-    fakeTempSkew %= 10;
+    fakeTempSkew %= 20;
 
     const reading = {
         "location": location,

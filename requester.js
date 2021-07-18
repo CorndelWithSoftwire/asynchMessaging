@@ -1,7 +1,7 @@
 
 ActiveMq = require("./ActiveMqConnection.js");
 
-// Send one request
+// Example Request/Response client
 //
 // node requester queueName "request text" priority
 
