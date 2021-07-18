@@ -4,12 +4,20 @@ var client = mqtt.connect('mqtt://localhost');
 let fakeTempSkew = 5;
 let fakeTemp = 18;
 
+let location = process.argv[2];
+if (!location || location.length == 0) {
+    location = "hall";
+}
+
+console.log("Thermosts location: " + location);
+
+// publish a fake thermostat reading every 10 seconds
 setInterval( () => {
     fakeTempSkew++;
     fakeTempSkew %= 10;
 
     const reading = {
-        "location": "hall",
+        "location": location,
         "time": Date.now(),
         "temperature": fakeTemp + fakeTempSkew
     };
