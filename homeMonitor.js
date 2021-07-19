@@ -54,6 +54,7 @@ function processThermostatMessage(data, headers) {
     const location = data.location;
     if (!location || location.length == 0 ) {
         console.log("Invalid data received ", data, headers);
+        return;
     }
 
     if (!activeLocations[data.location]) {
