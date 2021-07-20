@@ -1,5 +1,24 @@
 var mqtt = require('async-mqtt');
-var client = mqtt.connect('mqtt://localhost');
+
+const dataTopic = 'home/thermostats';
+const willTopic = 'home/status/thermostats'
+const connectOptions = {
+    'will': {
+        'topic': willTopic,
+        'payload': "Thermostats Dead",
+        'retain': true,
+        // seems to have no effect in ActiveMQ
+        //'properties': {
+        //    'willDelayInterval': 60 * 1000
+        //}
+    }
+    // some brokers require willDelayInterval >= sessionExpiryInterval
+    //, 'properties': {
+    //    'sessionExpiryInterval': 60 * 1000
+    //}
+}
+
+var client = mqtt.connect('mqtt://localhost', connectOptions);
 
 let fakeTempSkew = 15;
 let fakeTemp = 10;
@@ -11,27 +30,52 @@ if (!location || location.length == 0) {
 
 console.log("Thermostat location: " + location);
 
-// publish a fake thermostat reading every 10 seconds
-setInterval( () => {
-    fakeTempSkew++;
-    fakeTempSkew %= 20;
+client.on("connect", () => {
+    console.log("Thermostat connected ");
+    publishStatus();
+    publishTelemetry();
+});
 
-    const reading = {
-        "location": location,
-        "time": Date.now(),
-        "temperature": fakeTemp + fakeTempSkew
-    };
-    const message = JSON.stringify(reading);
+// Will and Testament will publish a retained message if we die
+// Replace that with a live status when we reconnect
+// (If application had ability to shutdown cleanly, should pulish a "clean shutdown" too)
+function publishStatus(){
     const options = {
-        "retain" : true,
+        "retain": true,
     };
-    client.publish('home/thermostats', message, options).then((e) => {
+    client.publish(willTopic, "Thermostat Publishing", options).then((e) => {
         if (e) {
-            console.log("Error:" + JSON.stringify(e));
+            console.log("Status Error:" + JSON.stringify(e));
         } else {
-            console.log("OK " + JSON.stringify(reading) );
+            console.log("Status pubished ");
         }
 
     });
-}, 1000 * 10 );
+}
+
+// publish a fake thermostat reading every 10 seconds
+function publishTelemetry() {
+    setInterval(() => {
+        fakeTempSkew++;
+        fakeTempSkew %= 20;
+
+        const reading = {
+            "location": location,
+            "time": Date.now(),
+            "temperature": fakeTemp + fakeTempSkew
+        };
+        const message = JSON.stringify(reading);
+        const options = {
+            "retain": true,
+        };
+        client.publish(dataTopic, message, options).then((e) => {
+            if (e) {
+                console.log("Error:" + JSON.stringify(e));
+            } else {
+                console.log("OK " + JSON.stringify(reading));
+            }
+
+        });
+    }, 1000 * 10);
+}
 
