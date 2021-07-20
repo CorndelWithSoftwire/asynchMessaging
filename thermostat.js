@@ -9,7 +9,7 @@ if (!location || location.length == 0) {
     location = "hall";
 }
 
-console.log("Thermosts location: " + location);
+console.log("Thermostat location: " + location);
 
 // publish a fake thermostat reading every 10 seconds
 setInterval( () => {
@@ -22,9 +22,12 @@ setInterval( () => {
         "temperature": fakeTemp + fakeTempSkew
     };
     const message = JSON.stringify(reading);
-    client.publish('home/thermostats', message).then((e) => {
+    const options = {
+        "retain" : true,
+    };
+    client.publish('home/thermostats', message, options).then((e) => {
         if (e) {
-            console.log("Error:" + e);
+            console.log("Error:" + JSON.stringify(e));
         } else {
             console.log("OK " + JSON.stringify(reading) );
         }

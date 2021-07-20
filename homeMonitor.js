@@ -1,5 +1,6 @@
 
-ActiveMq = require("./ActiveMqConnection.js");
+var mqtt = require('async-mqtt');
+var client = mqtt.connect('mqtt://localhost');
 
 // Home Monitor - Subscribes to Thermostate Telemetry and detects possible problems
 //
@@ -10,7 +11,7 @@ ActiveMq = require("./ActiveMqConnection.js");
 //
 // raises problem if temperature is below threshold for specified duration
 
-const TOPIC = '/topic/home.thermostats';
+const TOPIC = 'home/thermostats';
 let threshold;
 let duration;
 
@@ -34,41 +35,47 @@ if (!duration) {
 
 const durationMillis = duration * 60 * 1000;
 
-console.log("Monitoring " + TOPIC + ": temperature below " + threshold + "C for " + duration + " min.")
+console.log("Monitoring " + TOPIC + ": temperature below " + threshold + "C for " + duration + " min.");
 
-ActiveMq.getConnection().then(
-    (mqConnection) => {
+client.on("message", (topic, data, headers) => {  
+    const jsonData = JSON.parse(data);
+    console.log('Received telemetry on ',topic, ": ",  jsonData);
+    processThermostatMessage(jsonData, headers);
+});
 
-        mqConnection.subscribe(TOPIC, (data, headers) => {
-            console.log('Received telemetry', data, headers);
-            const jsonData = JSON.parse(data);
-            processThermostatMessage(jsonData, headers)
-        });
-    }
-).catch(e => console.log(e));
+client.on("connect", () => {
+    client.subscribe(TOPIC).then( (info) => {
+        console.log('Subscribed', info); 
+    });
+});
+
 
 let activeLocations = {};
 
 function processThermostatMessage(data, headers) {
 
     const location = data.location;
-    if (!location || location.length == 0 ) {
+    if (!location || location.length == 0) {
         console.log("Invalid data received ", data, headers);
         return;
+    }
+
+    if ( headers.retain ){
+        console.log("Processing retained message");
     }
 
     if (!activeLocations[data.location]) {
         // intialise location record
         activeLocations[data.location] = { belowThreshold: false }
     }
-    Object.assign( activeLocations[location], 
-                   { time: data.time, temperature: data.temperature });
+    Object.assign(activeLocations[location],
+        { time: data.time, temperature: data.temperature });
 
     if (activeLocations[location].temperature >= threshold) {
         if (activeLocations[location].belowThreshold) {
             console.log("Temperature risen above threshold " + location);
             activeLocations[location].belowThreshold = false;
-        } 
+        }
     } else {
         if (activeLocations[location].belowThreshold) {
             // already seen some low temperatures, check durat8ion
@@ -77,13 +84,13 @@ function processThermostatMessage(data, headers) {
             if (timeBelowThreshold > durationMillis) {
                 // low temperature for duraton, notify problem 
                 // TODO: perhaps notify periodically, rather than every subsequent reading?
-                console.log("Sustained low temperature from " + location + ", " + JSON.stringify(data) )
+                console.log("Sustained low temperature from " + location + ", " + JSON.stringify(data))
             }
         } else {
             activeLocations[location].belowThreshold = true;
             activeLocations[location].thresholdCrossTime = data.time;
         }
-    } 
+    }
 
 }
 
