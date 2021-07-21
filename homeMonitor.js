@@ -55,8 +55,8 @@ let subscribed = false;
     client = mqtt.connect('mqtt://localhost', connectOptions);
     client.on("message", processMessage);
 
-    client.on("connect", (i) => {
-        console.log("onConnect", i);
+    client.on("connect", (info) => {
+        console.log("onConnect", info);
         if (!subscribed) {
             subscribeToTopics();
             subscribed = true;
@@ -98,9 +98,6 @@ function subscribeToTopics() {
 
     const options = {
         "qos": 1
-        //"properties" : {
-        //   "subscriptionIdentifier" : "homeMonitor"
-        //}
     };
     client.subscribe(TOPIC, options).then((info) => {
         console.log('Subscribed', info);

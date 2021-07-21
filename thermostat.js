@@ -2,12 +2,14 @@ var mqtt = require('async-mqtt');
 
 const dataTopic = 'home/thermostats';
 const willTopic = 'home/status/thermostats'
+const QOS = 1;
 const connectOptions = {
+    'qos': QOS,
     'will': {
         'topic': willTopic,
         'payload': "Thermostats Dead",
         'retain': true,
-        'qos': 2
+        'qos': QOS
         // seems to have no effect in ActiveMQ
         //'properties': {
         //    'willDelayInterval': 60 * 1000
@@ -43,7 +45,7 @@ client.on("connect", () => {
 function publishStatus(){
     const options = {
         "retain": true,
-        "qos" : 2
+        "qos" : QOS
     };
     client.publish(willTopic, "Thermostat Publishing", options).then((e) => {
         if (e) {
@@ -69,7 +71,7 @@ function publishTelemetry() {
         const message = JSON.stringify(reading);
         const options = {
             "retain": true,
-            "qos" : 2
+            "qos" : QOS
         };
         client.publish(dataTopic, message, options).then((e) => {
             if (e) {
