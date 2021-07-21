@@ -1,6 +1,5 @@
 
 var mqtt = require('async-mqtt');
-var client = mqtt.connect('mqtt://localhost');
 
 // Home Monitor - Subscribes to Thermostate Telemetry and detects possible problems
 //
@@ -11,7 +10,10 @@ var client = mqtt.connect('mqtt://localhost');
 //
 // raises problem if temperature is below threshold for specified duration
 
-const TOPIC = 'home/thermostats';
+
+const dataTopic = 'home/thermostats';
+const willTopic = 'home/status/thermostats'
+const TOPIC = 'home/#';
 let threshold;
 let duration;
 
@@ -37,17 +39,78 @@ const durationMillis = duration * 60 * 1000;
 
 console.log("Monitoring " + TOPIC + ": temperature below " + threshold + "C for " + duration + " min.");
 
-client.on("message", (topic, data, headers) => {  
-    const jsonData = JSON.parse(data);
-    console.log('Received telemetry on ',topic, ": ",  jsonData);
-    processThermostatMessage(jsonData, headers);
-});
+// state shared by connection function and callbacks
+// (should refactor to an Object)
+let client; 
+let subscribed = false;
 
-client.on("connect", () => {
-    client.subscribe(TOPIC).then( (info) => {
-        console.log('Subscribed', info); 
+// Connection function, invoked immediately to start processing
+// also used to reconnect after server failure, otherwise subscriptions don't resume
+
+(function connectToServer() {
+    const connectOptions = {
+        "clean": false,
+        "clientId": "homeMonitor"
+    }
+    client = mqtt.connect('mqtt://localhost', connectOptions);
+    client.on("message", processMessage);
+
+    client.on("connect", (i) => {
+        console.log("onConnect", i);
+        if (!subscribed) {
+            subscribeToTopics();
+            subscribed = true;
+        }
     });
-});
+
+    // need to reinitialise client after server restart
+    client.on('offline', () => {
+        // try every 10 seconds, otherwise we get tjousands of retries     
+        setTimeout(() => {
+            client.end(true, () => {
+                console.log("Connection to server lost, reconnecting ...");
+                subscribed = false
+                connectToServer();
+            });
+        }, 1000 * 10);
+
+    });
+})();
+
+// methods called for MQTT client events
+
+// onMessage handler
+function processMessage(topic, data, headers) {
+    if (topic === willTopic) {
+        console.log("status: " + data);
+    } else if (topic === dataTopic) {
+        const jsonData = JSON.parse(data);
+        console.log('Received telemetry on ', topic, ": ", jsonData);
+        processThermostatMessage(jsonData, headers);
+    } else {
+        console.log("Unexpected topic " + topic);
+    }
+}
+
+// subscribe, used when client connects or reconnects
+
+function subscribeToTopics() {
+
+    const options = {
+        "qos": 1
+        //"properties" : {
+        //   "subscriptionIdentifier" : "homeMonitor"
+        //}
+    };
+    client.subscribe(TOPIC, options).then((info) => {
+        console.log('Subscribed', info);
+    }).catch(e => {
+        console.log("Subscribe exception", e);
+    });
+}
+
+
+
 
 
 let activeLocations = {};
@@ -60,7 +123,7 @@ function processThermostatMessage(data, headers) {
         return;
     }
 
-    if ( headers.retain ){
+    if (headers.retain) {
         console.log("Processing retained message");
     }
 

@@ -7,6 +7,7 @@ const connectOptions = {
         'topic': willTopic,
         'payload': "Thermostats Dead",
         'retain': true,
+        'qos': 2
         // seems to have no effect in ActiveMQ
         //'properties': {
         //    'willDelayInterval': 60 * 1000
@@ -42,12 +43,13 @@ client.on("connect", () => {
 function publishStatus(){
     const options = {
         "retain": true,
+        "qos" : 2
     };
     client.publish(willTopic, "Thermostat Publishing", options).then((e) => {
         if (e) {
-            console.log("Status Error:" + JSON.stringify(e));
+            console.log("Status info:" + JSON.stringify(e));
         } else {
-            console.log("Status pubished ");
+            console.log("Connection status pubished ");
         }
 
     });
@@ -67,14 +69,17 @@ function publishTelemetry() {
         const message = JSON.stringify(reading);
         const options = {
             "retain": true,
+            "qos" : 2
         };
         client.publish(dataTopic, message, options).then((e) => {
             if (e) {
-                console.log("Error:" + JSON.stringify(e));
+                console.log("Telemetry:", JSON.stringify(e), reading );
             } else {
                 console.log("OK " + JSON.stringify(reading));
             }
 
+        }).catch( (e) => {
+            console.log("Telemetry catch: ", e)
         });
     }, 1000 * 10);
 }
