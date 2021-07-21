@@ -37,17 +37,61 @@ if (!duration) {
 
 const durationMillis = duration * 60 * 1000;
 
+const isCleaningText = process.argv[4];
+const isCleaning = (isCleaningText && isCleaningText.length > 0);
+
 console.log("Monitoring " + TOPIC + ": temperature below " + threshold + "C for " + duration + " min.");
 
 // state shared by connection function and callbacks
 // (should refactor to an Object)
-let client; 
+let client;
 let subscribed = false;
 
 // Connection function, invoked immediately to start processing
 // also used to reconnect after server failure, otherwise subscriptions don't resume
 
-(function connectToServer() {
+
+function cleanSubscriptions() {
+    const connectOptions = {
+        "clean": true,
+        "clientId": "homeMonitor"
+    }
+    let cleanClient = mqtt.connect('mqtt://localhost', connectOptions);
+
+    let promise = new Promise((resolve, reject) => {
+        cleanClient.on("connect", (info) => {
+            console.log("on cleaner connect", info);
+            cleanClient.end();
+            resolve("clean ok");
+        });
+
+        cleanClient.on("error", (info) => {
+            console.log("on cleaner error", info);
+            reject("clean failed");
+        });
+    });
+    return promise;
+}
+
+let preWorkPromise;
+if (isCleaning) {
+    preWorkPromise = cleanSubscriptions();
+} else {
+    preWorkPromise = new Promise((resolve, reject) => {
+        resolve("no cleaning");
+    }
+    );
+
+
+
+}
+
+preWorkPromise.then((info) => connectToServer(info)).catch(
+    (e) => console.log("error", e)
+);
+
+function connectToServer(info) {
+    console.log("connecting after ", info)
     const connectOptions = {
         "clean": false,
         "clientId": "homeMonitor"
@@ -75,7 +119,7 @@ let subscribed = false;
         }, 1000 * 10);
 
     });
-})();
+}
 
 // methods called for MQTT client events
 
