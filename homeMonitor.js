@@ -3,19 +3,22 @@ var mqtt = require('async-mqtt');
 
 // Home Monitor - Subscribes to Thermostate Telemetry and detects possible problems
 //
-// node homeMonitor.js threshold duration
+// node homeMonitor.js threshold duration [c]
 //
 // threshold temperature in Celsius
-// duration in minutes, 
+// duration in minutes,
+// c clean Durable Subscription 
 //
 // raises problem if temperature is below threshold for specified duration
-
 
 const dataTopic = 'home/thermostats';
 const willTopic = 'home/status/thermostats'
 const TOPIC = 'home/#';
+
+// values to be set from command line
 let threshold;
 let duration;
+let isCleaning;
 
 const thresholdText = process.argv[2];
 if (thresholdText && thresholdText.length > 0) {
@@ -38,19 +41,41 @@ if (!duration) {
 const durationMillis = duration * 60 * 1000;
 
 const isCleaningText = process.argv[4];
-const isCleaning = (isCleaningText && isCleaningText.length > 0);
+isCleaning = (isCleaningText && isCleaningText == "c");
 
-console.log("Monitoring " + TOPIC + ": temperature below " + threshold + "C for " + duration + " min.");
+
+console.log("Monitoring " + TOPIC + ": temperature below " 
+            + threshold + "C for " 
+            + duration + " min."
+            + (isCleaning ? "cleaning subscription" : "continuing subscription")
+            );
 
 // state shared by connection function and callbacks
 // (should refactor to an Object)
 let client;
 let subscribed = false;
 
-// Connection function, invoked immediately to start processing
-// also used to reconnect after server failure, otherwise subscriptions don't resume
 
 
+let preWorkPromise;
+if (isCleaning) {
+    preWorkPromise = cleanSubscriptions();
+} else {
+    preWorkPromise = new Promise((resolve, reject) => {
+        resolve("no cleaning");
+    }
+    );
+}
+
+preWorkPromise.then((info) => connectToServer(info)).catch(
+    (e) => console.log("error", e)
+);
+
+// Clean Connection
+// Instructs Server to ignore any previous Durable Subscription
+// Must then disconnect so that new Durable Subscription can be created.
+// Returns a Promise that will be resolved when clean is complete
+// Will retry if server is down
 function cleanSubscriptions() {
     const connectOptions = {
         "clean": true,
@@ -66,33 +91,23 @@ function cleanSubscriptions() {
         });
 
         cleanClient.on("error", (info) => {
-            console.log("on cleaner error", info);
-            reject("clean failed");
+            console.log("on cleaner connection error", info);
+            // conections retry, so do nothing. 
+
+            // if we wanted to stop end the client and reject the promise
+            //cleanClient.end();
+            //reject("clean failed");
         });
     });
     return promise;
 }
 
-let preWorkPromise;
-if (isCleaning) {
-    preWorkPromise = cleanSubscriptions();
-} else {
-    preWorkPromise = new Promise((resolve, reject) => {
-        resolve("no cleaning");
-    }
-    );
-
-
-
-}
-
-preWorkPromise.then((info) => connectToServer(info)).catch(
-    (e) => console.log("error", e)
-);
-
+// Connect and Subscribe
+// also used to reconnect after server failure, otherwise subscriptions don't resume
 function connectToServer(info) {
-    console.log("connecting after ", info)
+    console.log("connecting after", info)
     const connectOptions = {
+
         "clean": false,
         "clientId": "homeMonitor"
     }
@@ -137,9 +152,7 @@ function processMessage(topic, data, headers) {
 }
 
 // subscribe, used when client connects or reconnects
-
 function subscribeToTopics() {
-
     const options = {
         "qos": 1
     };
@@ -150,9 +163,7 @@ function subscribeToTopics() {
     });
 }
 
-
-
-
+// Business Logic - Here we interpret the Telemetry Messaged
 
 let activeLocations = {};
 
@@ -201,7 +212,7 @@ function processThermostatMessage(data, headers) {
 // print helpful message and exit
 function usageExit(message) {
     console.log(message);
-    console.log("Usage: node homeMonitor.js threshold duration");
+    console.log("Usage: node homeMonitor.js threshold duration [c]");
     process.exit(1);
 }
 
