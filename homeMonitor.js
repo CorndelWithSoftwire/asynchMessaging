@@ -107,7 +107,6 @@ function cleanSubscriptions() {
 function connectToServer(info) {
     console.log("connecting after", info)
     const connectOptions = {
-
         "clean": false,
         "clientId": "homeMonitor"
     }
