@@ -7,15 +7,7 @@ const connectOptions = {
         'topic': willTopic,
         'payload': "Thermostats Dead",
         'retain': true,
-        // seems to have no effect in ActiveMQ
-        //'properties': {
-        //    'willDelayInterval': 60 * 1000
-        //}
     }
-    // some brokers require willDelayInterval >= sessionExpiryInterval
-    //, 'properties': {
-    //    'sessionExpiryInterval': 60 * 1000
-    //}
 }
 
 var client = mqtt.connect('mqtt://localhost', connectOptions);
