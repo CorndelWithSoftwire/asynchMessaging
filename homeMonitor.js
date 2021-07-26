@@ -117,6 +117,7 @@ function connectToServer(info) {
         console.log("onConnect", info);
         if (!subscribed) {
             subscribeToTopics();
+            publishEstate();
             subscribed = true;
         }
     });
@@ -160,6 +161,59 @@ function subscribeToTopics() {
     }).catch(e => {
         console.log("Subscribe exception", e);
     });
+}
+
+// publish Estate Info
+function publishEstate(){
+    estateInfo = {propertyGroups: [
+        {
+          id: 1,
+          name: 'The Avenue',
+          children : [
+            {
+               id: 101,
+               name: "Beech",
+               online: true,
+               alerts: []
+            },
+            {
+               id: 103,
+               name: "Oak",
+               online: false,
+               alerts: []
+            },
+
+          ]
+        },{
+          id: 2,
+          name: 'Broadway',
+          children : [
+            {
+               id: 201,
+               name: "Astoria",
+               online: true,
+               alerts: [{time: 0, text: "Below Threshold"}]
+            }
+          ]
+        }
+      ]
+    }
+    const estateInfoTopic = "estate/Info";
+    const message = JSON.stringify(estateInfo);
+        const options = {
+            "retain": true,
+            "qos" : 1
+        };
+        client.publish(estateInfoTopic, message, options).then((e) => {
+            if (e) {
+                console.log("Estate Info:", e );
+            } else {
+                console.log("Estate Info publised ", message);
+            }
+
+        }).catch( (e) => {
+            console.log("Telemetry catch: ", e)
+        });
 }
 
 // Business Logic - Here we interpret the Telemetry Messaged

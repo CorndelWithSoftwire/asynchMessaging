@@ -10,6 +10,17 @@
         />
       </v-col>
     </v-row>
+     <v-row color="primary" >
+      <v-col cols="12">
+         
+       <v-treeview 
+           :items="propertyGroups"  
+           
+       ></v-treeview>
+
+      </v-col>
+    </v-row>
+
   </v-container>
 </template>
 
@@ -18,19 +29,37 @@
     name: 'Estate',
 
     data: () => ({
-      ecosystem: [
+      propertyGroups: [
         {
-          text: 'vuetify-loader',
-          href: 'https://github.com/vuetifyjs/vuetify-loader',
-        },
-        {
-          text: 'github',
-          href: 'https://github.com/vuetifyjs/vuetify',
-        },
-        {
-          text: 'awesome-vuetify',
-          href: 'https://github.com/vuetifyjs/awesome-vuetify',
-        },
+          id: 1,
+          name: 'The Avenue',
+          children : [
+            {
+               id: 101,
+               name: "Beech",
+               online: true,
+               alerts: []
+            },
+            {
+               id: 103,
+               name: "Oak",
+               online: false,
+               alerts: []
+            },
+
+          ]
+        },{
+          id: 2,
+          name: 'Broadway',
+          children : [
+            {
+               id: 201,
+               name: "Astoria",
+               online: true,
+               alerts: [{time: 0, text: "Below Threshold"}]
+            }
+          ]
+        }
       ]
     }),
   }
