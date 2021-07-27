@@ -12,7 +12,12 @@
     </v-row>
     <v-row color="primary">
       <v-col cols="12">
-        <v-treeview :items="propertyGroups"></v-treeview>
+        <v-treeview 
+            dense 
+            :items="propertyGroups"
+            return-object @update:active="selectItem"
+            >
+        </v-treeview>
       </v-col>
     </v-row>
   </v-container>
@@ -21,12 +26,21 @@
 <script>
 import { Client} from 'paho-mqtt';
 let myClient;
+
 export default {
   name: "Estate",
 
-  mounted: () => {
-    console.log("Subscribe here");
-    //const myClient = window.client;
+  methods: {
+    selectItem(item) {
+        console.log("Selected ", item);
+    }
+
+  },
+
+  mounted(){
+    // save "this" for use in Websocket callbacks
+    const thisEstate = this;
+
     myClient = new Client("localhost", 61614, "estateMonitor");
     myClient.onConnectionLost = onConnectionLost;
     myClient.onMessageArrived = onMessageArrived;
@@ -41,43 +55,20 @@ export default {
       if (responseObject.errorCode !== 0)
         console.log("onConnectionLost:" + responseObject.errorMessage);
     }
+
     function onMessageArrived(message) {
       console.log("onMessageArrived:" + message.payloadString);
+      const payload = JSON.parse(message.payloadString);
+      thisEstate.propertyGroups = payload.propertyGroups;
     }
   },
 
   data: () => ({
     propertyGroups: [
       {
-        id: 1,
-        name: "The Avenue",
-        children: [
-          {
-            id: 101,
-            name: "Beech",
-            online: true,
-            alerts: [],
-          },
-          {
-            id: 103,
-            name: "Oak",
-            online: false,
-            alerts: [],
-          },
-        ],
-      },
-      {
-        id: 2,
-        name: "Broadway",
-        children: [
-          {
-            id: 201,
-            name: "Astoria",
-            online: true,
-            alerts: [{ time: 0, text: "Below Threshold" }],
-          },
-        ],
-      },
+        id: 0,
+        name: "Loading ..."       
+      }
     ],
   }),
 };
