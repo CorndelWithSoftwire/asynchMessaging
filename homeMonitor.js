@@ -142,7 +142,7 @@ function connectToServer(info) {
 function processMessage(topic, data, headers) {
     if (topic === willTopic) {
         console.log("status: " + data);
-    } else if (topic === dataTopic) {
+    } else if (topic.startsWith(dataTopic) ) {
         const jsonData = JSON.parse(data);
         console.log('Received telemetry on ', topic, ": ", jsonData);
         processThermostatMessage(jsonData, headers);
