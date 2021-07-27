@@ -14,6 +14,7 @@
       <v-col cols="12">
         <v-treeview 
             dense 
+            activatable
             :items="propertyGroups"
             return-object @update:active="selectItem"
             >
