@@ -12,6 +12,7 @@ var mqtt = require('async-mqtt');
 // raises problem if temperature is below threshold for specified duration
 
 const estateInfoTopic = "estate/Overview";
+const thermostatStatusTopic = "estate/online/thermostats";
 const dataTopicRoot = 'estate/thermostats';
 const willTopicRoot = 'estate/status';
 const dataTopicWild = dataTopicRoot + "/#";
@@ -47,11 +48,11 @@ const isCleaningText = process.argv[4];
 isCleaning = (isCleaningText && isCleaningText == "c");
 
 
-console.log("Monitoring temperature below " 
-            + threshold + "C for " 
-            + duration + " min."
-            + (isCleaning ? "cleaning subscription" : "continuing subscription")
-            );
+console.log("Monitoring temperature below "
+    + threshold + "C for "
+    + duration + " min."
+    + (isCleaning ? "cleaning subscription" : "continuing subscription")
+);
 
 // state shared by connection function and callbacks
 // (should refactor to an Object)
@@ -120,7 +121,6 @@ function connectToServer(info) {
         console.log("onConnect", info);
         if (!subscribed) {
             subscribeToTopics();
-            publishEstate();
             subscribed = true;
         }
     });
@@ -143,11 +143,11 @@ function connectToServer(info) {
 
 // onMessage handler
 function processMessage(topic, data, headers) {
-    if (topic.startsWith(willTopicRoot) ){
+    if (topic.startsWith(willTopicRoot)) {
         const jsonData = JSON.parse(data);
         console.log("status on " + topic + "=" + data);
         processWillMessage(jsonData, headers)
-    } else if (topic.startsWith(dataTopicRoot) ) {
+    } else if (topic.startsWith(dataTopicRoot)) {
         const jsonData = JSON.parse(data);
         console.log('Received telemetry on ', topic, ": ", jsonData);
         processThermostatMessage(jsonData, headers);
@@ -175,57 +175,37 @@ function subscribeToTopics() {
     });
 }
 
+const propertyGroups = [
+    "unknown",
+    "The Avenuue",
+    "Broadway",
+    "Lexington",
+    "Americas",
+    "Fifth"
+];
+
+// build the estate info here from Will messages
+const estateInfo = [];
+
 // publish Estate Info
-function publishEstate(){
-    estateInfo = {propertyGroups: [
-        {
-          id: 1,
-          name: 'The Avenue',
-          children : [
-            {
-               id: 101,
-               name: "Beech",
-               online: true,
-               alerts: []
-            },
-            {
-               id: 103,
-               name: "Oak",
-               online: false,
-               alerts: []
-            },
+function publishEstate() {
+   
+    const message = JSON.stringify({"propertyGroups" : estateInfo});
 
-          ]
-        },{
-          id: 2,
-          name: 'Broadway',
-          children : [
-            {
-               id: 201,
-               name: "Astoria",
-               online: true,
-               alerts: [{time: 0, text: "Below Threshold"}]
-            }
-          ]
+    const options = {
+        "retain": true,
+        "qos": 1
+    };
+    client.publish(estateInfoTopic, message, options).then((e) => {
+        if (e) {
+            console.log("Estate Info:", e);
+        } else {
+            console.log("Estate Info publised ", message);
         }
-      ]
-    }
-    
-    const message = JSON.stringify(estateInfo);
-        const options = {
-            "retain": true,
-            "qos" : 1
-        };
-        client.publish(estateInfoTopic, message, options).then((e) => {
-            if (e) {
-                console.log("Estate Info:", e );
-            } else {
-                console.log("Estate Info publised ", message);
-            }
 
-        }).catch( (e) => {
-            console.log("Telemetry catch: ", e)
-        });
+    }).catch((e) => {
+        console.log("Telemetry catch: ", e)
+    });
 }
 
 // Business Logic - Here we interpret the Telemetry Messaged
@@ -235,72 +215,147 @@ let activeGroups = {};
 function processThermostatMessage(data, headers) {
 
     // to simplify debugging including location info in payload
-    const topic = headers.topic;
-    const topicParts = topic.split("/");
-    if (topicParts.length < 3){
-        console.log("Unexpected topic " + topic);
+    // but use the topic as the definitive source
+    const topicIds = parseTopic(headers.topic);
+    if ( ! topicIds ){
         return;
     }
-    const group = topicParts[topicParts.length-2];
-    const property = topicParts[topicParts.length-1];
-    const location = data.location;
-    if (!group || group.length == 0) {
-        console.log("Invalid group received ", data, headers);
-        return;
-    }
-    if (!property || property.length == 0) {
-        console.log("Invalid property received ", data, headers);
-        return;
-    }
+    
+    const { groupId, propertyId} = topicIds;
 
     if (headers.retain) {
         console.log("Processing retained message");
     }
 
-    
-    if (!activeGroups[group]) {
+
+    if (!activeGroups[groupId]) {
         // intialise location record
-        activeGroups[group] = { }
+        activeGroups[groupId] = {}
     }
 
-    const currentGroup = activeGroups[group];
+    const currentGroup = activeGroups[groupId];
 
-    if (!currentGroup[property]) {
+    if (!currentGroup[propertyId]) {
         // intialise location record
-        currentGroup[property] = { belowThreshold: false }
+        currentGroup[propertyId] = { belowThreshold: false }
     }
-    Object.assign(currentGroup[property],
+    Object.assign(currentGroup[propertyId],
         { time: data.time, temperature: data.temperature });
 
-    if (currentGroup[property].temperature >= threshold) {
-        if (currentGroup[property].belowThreshold) {
-            console.log("Temperature risen above threshold " + group + "/" + property);
-            currentGroup[property].belowThreshold = false;
+    if (currentGroup[propertyId].temperature >= threshold) {
+        if (currentGroup[propertyId].belowThreshold) {
+            console.log("Temperature risen above threshold " + groupId + "/" + propertyId);
+            currentGroup[propertyId].belowThreshold = false;
         }
     } else {
-        if (currentGroup[property].belowThreshold) {
+        if (currentGroup[propertyId].belowThreshold) {
             // already seen some low temperatures, check durat8ion
             const timeBelowThreshold =
-                data.time - currentGroup[property].thresholdCrossTime;
+                data.time - currentGroup[propertyId].thresholdCrossTime;
             if (timeBelowThreshold > durationMillis) {
                 // low temperature for duraton, notify problem 
                 // TODO: perhaps notify periodically, rather than every subsequent reading?
-                console.log("Sustained low temperature from " 
-                                       + group + "/" + property +", " + JSON.stringify(data))
+                console.log("Sustained low temperature from "
+                    + groupId + "/" + propertyId + ", " + JSON.stringify(data))
             }
         } else {
-            currentGroup[property].belowThreshold = true;
-            currentGroup[property].thresholdCrossTime = data.time;
+            currentGroup[propertyId].belowThreshold = true;
+            currentGroup[propertyId].thresholdCrossTime = data.time;
         }
     }
-
 }
 
-function processWillMessage(data, headers){
-   console.log("will ", data);
-   if (headers.retain) {
-    console.log("Processing retained will message");
-   }
+// publish information about one thermostat, typically when status changes
+function publishThermostatStatus(thermostatInfo){
+    const message = JSON.stringify(thermostatInfo);
+    const options = {
+        "retain": false, // single topic for all status changes, so retained less useful
+        "qos": 1
+    };
+    client.publish(thermostatStatusTopic, message, options).then((e) => {
+        if (e) {
+            console.log("thermostat Status:", e);
+        } else {
+            console.log("thermostat status published ", message);
+        }
+
+    }).catch((e) => {
+        console.log("thermostat Status catch: ", e)
+    });
+}
+
+// extract group and property ids from topic
+function parseTopic(topic){ 
+    const topicParts = topic.split("/");
+    if (topicParts.length < 3) {
+        console.log("Unexpected topic " + topic);
+        return null;
+    }
+    const groupStr = topicParts[topicParts.length - 2];
+    const propertyStr = topicParts[topicParts.length - 1];
+    if ( !groupStr || ! propertyStr){
+        console.log("invalid topic " + topic);
+        return null;
+    }
+    const groupId = parseInt(groupStr);
+    const propertyId = parseInt(propertyStr);
+    return { groupId, propertyId };
+}
+
+// thermostat status updates on Will topics
+// the set of all these topics defines our estate
+function processWillMessage(data, headers) {
+    console.log("will ", data);
+    if (headers.retain) {
+        console.log("Processing retained will message");
+    }
+    const topicIds = parseTopic(headers.topic);
+    if ( ! topicIds ){
+        return;
+    }
+    const { groupId, propertyId} = topicIds;
+    // test for NaN
+    if ( groupId !== groupId || propertyId !== propertyId){
+        return;
+    }
+
+    let existingGroup = estateInfo.find( (e) =>{
+        return e.id === groupId;
+    });
+
+    if ( ! existingGroup ){
+        existingGroup = { "id" : groupId, "name" : propertyGroups[groupId], "children": []};
+        estateInfo.push ( existingGroup );
+    }
+  
+    let isNewProperty;
+    const existingProperty = existingGroup.children.find( (e) => {
+        return e.id === propertyId;
+    })
+
+    if ( existingProperty){
+        existingProperty.online = data.publishing;
+        isNewProperty = false;
+    } else {
+        existingGroup.children.push({ 
+             "id" : propertyId, 
+             "name" : data.propertyName, 
+             "online" : data.publishing
+        });
+        isNewProperty = true;
+    }
+  
+    if ( isNewProperty ){
+        publishEstate();
+    } else {
+
+        const thermostatStatus = Object.assign({ 'groupId' : groupId}, existingProperty);
+        publishThermostatStatus(thermostatStatus);          
+        
+    }
+
+   
+
 }
 
 // print helpful message and exit
@@ -310,4 +365,38 @@ function usageExit(message) {
     process.exit(1);
 }
 
+/* let estateInfo = {
+    propertyGroups: [
+        {
+            id: 1,
+            name: 'The Avenue',
+            children: [
+                {
+                    id: 101,
+                    name: "Beech",
+                    online: true,
+                    alerts: []
+                },
+                {
+                    id: 103,
+                    name: "Oak",
+                    online: false,
+                    alerts: []
+                },
+
+            ]
+        }, {
+            id: 2,
+            name: 'Broadway',
+            children: [
+                {
+                    id: 201,
+                    name: "Astoria",
+                    online: true,
+                    alerts: [{ time: 0, text: "Below Threshold" }]
+                }
+            ]
+        }
+    ]
+} */
 

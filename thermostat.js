@@ -15,19 +15,25 @@ if (!property || property.length == 0) {
     propertyId = parseInt(property);
 }
 
-console.log("Thermostat group/property: " + groupId + "/" + propertyId);
-const dataTopic = 'estate/thermostats/'+ groupId + "/" + propertyId ;
+let propertyName = process.argv[4];
+if (!propertyName || propertyName.length == 0) {
+    usageExit("specify property name");
+}
 
-const willTopic = 'estate/status/'+ groupId + "/" + propertyId;
+console.log("Thermostat group/property: " + groupId + "/" + propertyId);
+const dataTopic = 'estate/thermostats/' + groupId + "/" + propertyId;
+
+const willTopic = 'estate/status/' + groupId + "/" + propertyId;
 
 // time recorded for connected status too
 const timeStarted = new Date().getTime();
 const willPayload = {
     'message': "Thermostat dead",
     'publishing': false,
-    'groupId' : groupId,
-    'property' : propertyId,
-    'timeStarted' : timeStarted
+    'groupId': groupId,
+    'property': propertyId,
+    'propertyName': propertyName,
+    'timeStarted': timeStarted
 };
 const QOS = 1;
 
@@ -38,7 +44,7 @@ const connectOptions = {
         'payload': JSON.stringify(willPayload),
         'retain': true,
         'qos': QOS,
-        'timeStarted' : timeStarted
+        'timeStarted': timeStarted
     }
 }
 
@@ -58,18 +64,15 @@ client.on("connect", () => {
 // Will and Testament will publish a retained message if we die
 // Replace that with a live status when we reconnect
 // (If application had ability to shutdown cleanly, should pulish a "clean shutdown" too)
-function publishStatus(){
-    const status = {
-        'message': "Thermostat connected",
-        'publishing' : true,
-        'groupId' : groupId,
-        'property' : propertyId,
-        'timeStarted' : timeStarted
-   };
-   console.log(status);
+function publishStatus() {
+    // status has all the data set up for the Will, but with message and publishing flag adjusted
+    const status = Object.assign({}, willPayload);
+    status.message = "Thermostat Publishing"
+    status.publishing = true;
+    console.log(status);
     const options = {
         "retain": true,
-        "qos" : QOS
+        "qos": QOS
     };
     client.publish(willTopic, JSON.stringify(status), options).then((e) => {
         if (e) {
@@ -88,25 +91,25 @@ function publishTelemetry() {
         fakeTempSkew %= 20;
 
         const reading = {
-            "groupId" : groupId,
-            "property" : propertyId,
+            "groupId": groupId,
+            "property": propertyId,
             "time": Date.now(),
             "temperature": fakeTemp + fakeTempSkew
         };
         const message = JSON.stringify(reading);
         const options = {
             "retain": true,
-            "qos" : QOS
+            "qos": QOS
         };
         const propertyTopicc = dataTopic;
         client.publish(propertyTopicc, message, options).then((e) => {
             if (e) {
-                console.log("Telemetry:", JSON.stringify(e), reading );
+                console.log("Telemetry:", JSON.stringify(e), reading);
             } else {
                 console.log("OK " + JSON.stringify(reading));
             }
 
-        }).catch( (e) => {
+        }).catch((e) => {
             console.log("Telemetry catch: ", e)
         });
     }, 1000 * 10);
@@ -115,7 +118,7 @@ function publishTelemetry() {
 // print helpful message and exit
 function usageExit(message) {
     console.log(message);
-    console.log("Usage: node thermostat.js group property");
+    console.log("Usage: node thermostat.js group property propertyName");
     process.exit(1);
 }
 

@@ -20,10 +20,10 @@
           @update:active="selectItem"
         >
           <template v-slot:prepend="{ item, open }">
-            <v-icon v-if="item.children">
+            <v-icon v-if="item.children" color="blue darken-2">
               {{ open ? "mdi-folder-open" : "mdi-folder" }}
             </v-icon>
-            <v-icon v-else>
+            <v-icon v-else v-bind:color="item.online ? 'green' : 'red'">
               {{ item.online ? "mdi-thermometer" : "mdi-thermometer-off" }}
             </v-icon>
           </template>
