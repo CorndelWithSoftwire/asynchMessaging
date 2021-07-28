@@ -16,22 +16,29 @@ if (!property || property.length == 0) {
 }
 
 console.log("Thermostat group/property: " + groupId + "/" + propertyId);
-const dataTopic = 'estate/thermostats/'+ propertyId + "/" + groupId;
+const dataTopic = 'estate/thermostats/'+ groupId + "/" + propertyId ;
 
-const willTopic = 'estate/status/'+ propertyId + "/" + groupId;
+const willTopic = 'estate/status/'+ groupId + "/" + propertyId;
+
+// time recorded for connected status too
+const timeStarted = new Date().getTime();
 const willPayload = {
     'message': "Thermostat dead",
+    'publishing': false,
     'groupId' : groupId,
-    'property' : propertyId
+    'property' : propertyId,
+    'timeStarted' : timeStarted
 };
 const QOS = 1;
+
 const connectOptions = {
     'qos': QOS,
     'will': {
         'topic': willTopic,
         'payload': JSON.stringify(willPayload),
         'retain': true,
-        'qos': QOS
+        'qos': QOS,
+        'timeStarted' : timeStarted
     }
 }
 
@@ -54,15 +61,17 @@ client.on("connect", () => {
 function publishStatus(){
     const status = {
         'message': "Thermostat connected",
+        'publishing' : true,
         'groupId' : groupId,
-        'property' : propertyId
+        'property' : propertyId,
+        'timeStarted' : timeStarted
    };
    console.log(status);
     const options = {
         "retain": true,
         "qos" : QOS
     };
-    client.publish(willTopic, JSON.stringify(status) ).then((e) => {
+    client.publish(willTopic, JSON.stringify(status), options).then((e) => {
         if (e) {
             console.log("Status info:" + JSON.stringify(e));
         } else {
@@ -89,7 +98,8 @@ function publishTelemetry() {
             "retain": true,
             "qos" : QOS
         };
-        client.publish(dataTopic, message, options).then((e) => {
+        const propertyTopicc = dataTopic;
+        client.publish(propertyTopicc, message, options).then((e) => {
             if (e) {
                 console.log("Telemetry:", JSON.stringify(e), reading );
             } else {

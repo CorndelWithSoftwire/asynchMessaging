@@ -11,9 +11,12 @@ var mqtt = require('async-mqtt');
 //
 // raises problem if temperature is below threshold for specified duration
 
-const dataTopic = 'home/thermostats';
-const willTopic = 'home/status/thermostats'
-const TOPIC = 'home/#';
+const estateInfoTopic = "estate/Overview";
+const dataTopicRoot = 'estate/thermostats';
+const willTopicRoot = 'estate/status';
+const dataTopicWild = dataTopicRoot + "/#";
+const willTopicWild = willTopicRoot + "/#";
+
 
 // values to be set from command line
 let threshold;
@@ -44,7 +47,7 @@ const isCleaningText = process.argv[4];
 isCleaning = (isCleaningText && isCleaningText == "c");
 
 
-console.log("Monitoring " + TOPIC + ": temperature below " 
+console.log("Monitoring temperature below " 
             + threshold + "C for " 
             + duration + " min."
             + (isCleaning ? "cleaning subscription" : "continuing subscription")
@@ -140,9 +143,11 @@ function connectToServer(info) {
 
 // onMessage handler
 function processMessage(topic, data, headers) {
-    if (topic === willTopic) {
-        console.log("status: " + data);
-    } else if (topic.startsWith(dataTopic) ) {
+    if (topic.startsWith(willTopicRoot) ){
+        const jsonData = JSON.parse(data);
+        console.log("status on " + topic + "=" + data);
+        processWillMessage(jsonData, headers)
+    } else if (topic.startsWith(dataTopicRoot) ) {
         const jsonData = JSON.parse(data);
         console.log('Received telemetry on ', topic, ": ", jsonData);
         processThermostatMessage(jsonData, headers);
@@ -156,10 +161,17 @@ function subscribeToTopics() {
     const options = {
         "qos": 1
     };
-    client.subscribe(TOPIC, options).then((info) => {
+
+    client.subscribe(dataTopicWild, options).then((info) => {
         console.log('Subscribed', info);
     }).catch(e => {
         console.log("Subscribe exception", e);
+    });
+
+    client.subscribe(willTopicWild, options).then((info) => {
+        console.log('Subscribed to wills ', info);
+    }).catch(e => {
+        console.log("Will Subscribe exception", e);
     });
 }
 
@@ -198,7 +210,7 @@ function publishEstate(){
         }
       ]
     }
-    const estateInfoTopic = "estate/Info";
+    
     const message = JSON.stringify(estateInfo);
         const options = {
             "retain": true,
@@ -218,13 +230,26 @@ function publishEstate(){
 
 // Business Logic - Here we interpret the Telemetry Messaged
 
-let activeLocations = {};
+let activeGroups = {};
 
 function processThermostatMessage(data, headers) {
 
+    // to simplify debugging including location info in payload
+    const topic = headers.topic;
+    const topicParts = topic.split("/");
+    if (topicParts.length < 3){
+        console.log("Unexpected topic " + topic);
+        return;
+    }
+    const group = topicParts[topicParts.length-2];
+    const property = topicParts[topicParts.length-1];
     const location = data.location;
-    if (!location || location.length == 0) {
-        console.log("Invalid data received ", data, headers);
+    if (!group || group.length == 0) {
+        console.log("Invalid group received ", data, headers);
+        return;
+    }
+    if (!property || property.length == 0) {
+        console.log("Invalid property received ", data, headers);
         return;
     }
 
@@ -232,34 +257,50 @@ function processThermostatMessage(data, headers) {
         console.log("Processing retained message");
     }
 
-    if (!activeLocations[data.location]) {
+    
+    if (!activeGroups[group]) {
         // intialise location record
-        activeLocations[data.location] = { belowThreshold: false }
+        activeGroups[group] = { }
     }
-    Object.assign(activeLocations[location],
+
+    const currentGroup = activeGroups[group];
+
+    if (!currentGroup[property]) {
+        // intialise location record
+        currentGroup[property] = { belowThreshold: false }
+    }
+    Object.assign(currentGroup[property],
         { time: data.time, temperature: data.temperature });
 
-    if (activeLocations[location].temperature >= threshold) {
-        if (activeLocations[location].belowThreshold) {
-            console.log("Temperature risen above threshold " + location);
-            activeLocations[location].belowThreshold = false;
+    if (currentGroup[property].temperature >= threshold) {
+        if (currentGroup[property].belowThreshold) {
+            console.log("Temperature risen above threshold " + group + "/" + property);
+            currentGroup[property].belowThreshold = false;
         }
     } else {
-        if (activeLocations[location].belowThreshold) {
+        if (currentGroup[property].belowThreshold) {
             // already seen some low temperatures, check durat8ion
             const timeBelowThreshold =
-                data.time - activeLocations[location].thresholdCrossTime;
+                data.time - currentGroup[property].thresholdCrossTime;
             if (timeBelowThreshold > durationMillis) {
                 // low temperature for duraton, notify problem 
                 // TODO: perhaps notify periodically, rather than every subsequent reading?
-                console.log("Sustained low temperature from " + location + ", " + JSON.stringify(data))
+                console.log("Sustained low temperature from " 
+                                       + group + "/" + property +", " + JSON.stringify(data))
             }
         } else {
-            activeLocations[location].belowThreshold = true;
-            activeLocations[location].thresholdCrossTime = data.time;
+            currentGroup[property].belowThreshold = true;
+            currentGroup[property].thresholdCrossTime = data.time;
         }
     }
 
+}
+
+function processWillMessage(data, headers){
+   console.log("will ", data);
+   if (headers.retain) {
+    console.log("Processing retained will message");
+   }
 }
 
 // print helpful message and exit
