@@ -88,6 +88,8 @@ export default {
       // Once a connection has been made, make a subscription and send a message.
       console.log("onConnect");
       myClient.subscribe("estate/Overview");
+      myClient.subscribe("estate/online/thermostats");
+      
     }
     function onConnectionLost(responseObject) {
       if (responseObject.errorCode !== 0)
@@ -95,10 +97,27 @@ export default {
     }
 
     function onMessageArrived(message) {
-      console.log("onMessageArrived:" + message.topic);
+      console.log("onMessageArrived:" + message.topic + ":");
       if (message.topic === "estate/Overview") {
         const payload = JSON.parse(message.payloadString);
         thisEstate.propertyGroups = payload.propertyGroups;
+      } else if (message.topic === "estate/online/thermostats"){
+        const payload = JSON.parse(message.payloadString);
+        console.log(payload);
+        const group = thisEstate.propertyGroups.find( (e) => {
+          return e.id === payload.groupId;
+        });
+        if (! group){
+          console.log("unexpected group " + payload.groupId)
+          return;
+        }
+        const property = group.children.find( (e) => {
+          return e.id === payload.id;
+        });
+        if (property){
+          property.online = payload.publishing;
+        }
+
       } else {
         const payload = JSON.parse(message.payloadString);
         const formattedTime = new Date(payload.time).toLocaleString([], {
