@@ -19,6 +19,14 @@
           return-object
           @update:active="selectItem"
         >
+          <template v-slot:prepend="{ item, open }">
+            <v-icon v-if="item.children">
+              {{ open ? "mdi-folder-open" : "mdi-folder" }}
+            </v-icon>
+            <v-icon v-else>
+              {{ item.online ? "mdi-thermometer" : "mdi-thermometer-off" }}
+            </v-icon>
+          </template>
         </v-treeview>
       </v-col>
     </v-row>
@@ -79,7 +87,7 @@ export default {
     function onConnect() {
       // Once a connection has been made, make a subscription and send a message.
       console.log("onConnect");
-      myClient.subscribe("estate/Info");
+      myClient.subscribe("estate/Overview");
     }
     function onConnectionLost(responseObject) {
       if (responseObject.errorCode !== 0)
@@ -88,7 +96,7 @@ export default {
 
     function onMessageArrived(message) {
       console.log("onMessageArrived:" + message.topic);
-      if (message.topic === "estate/Info") {
+      if (message.topic === "estate/Overview") {
         const payload = JSON.parse(message.payloadString);
         thisEstate.propertyGroups = payload.propertyGroups;
       } else {
