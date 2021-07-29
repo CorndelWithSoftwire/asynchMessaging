@@ -71,8 +71,57 @@ export default {
   methods: {
     selectItem(item) {
       console.log("Selected ", item);
-      myClient.subscribe("home/thermostats/hall");
+      const groupId = item[0].groupId;
+      const propertyId = item[0].id;
+      myClient.subscribe("estate/thermostats/" + groupId + "/" + propertyId);
     },
+    processThermostatStatus(message){
+       const payload = JSON.parse(message.payloadString);
+        console.log(payload);
+        const group = this.propertyGroups.find( (e) => {
+          return e.id === payload.groupId;
+        });
+        if (! group){
+          console.log("unexpected group " + payload.groupId)
+          return;
+        }
+        const propertyIndex = group.children.findIndex( (e) => {
+          return e.id === payload.id;
+        });
+        if (propertyIndex >= 0){
+          // experiment with what Vue treats as reactive
+          // replace the propery in the group array
+          const property = Object.assign({}, group.children[propertyIndex]);
+          property.online = payload.online;
+          this.$set( group.children, propertyIndex, property);
+          console.log("groups after property update",this.propertyGroups);
+        }
+    },
+    processThermostatData(message){
+        const payload = JSON.parse(message.payloadString);
+        const formattedTime = new Date(payload.time).toLocaleString([], {
+          hour: "numeric",
+          minute: "numeric",
+        });
+        this.thermostatSeries.values.push(payload.temperature);
+        this.thermostatSeries.labels.push(formattedTime);
+        const newLength = Math.min(
+          this.thermostatSeries.values.length,
+          15
+        );
+        this.thermostatSeries.values.length = newLength;
+        this.thermostatSeries.labels.length = newLength;
+    },
+    processEstateOverview(message){
+        const payload = JSON.parse(message.payloadString);
+        // denormalise so that complete id of selected item is easier to get
+        payload.propertyGroups.forEach( group => {
+             group.children.forEach ( property => {
+                  property.groupId = group.id;
+             })
+        })
+        this.propertyGroups = payload.propertyGroups;
+    }
   },
 
   mounted() {
@@ -99,39 +148,11 @@ export default {
     function onMessageArrived(message) {
       console.log("onMessageArrived:" + message.topic + ":");
       if (message.topic === "estate/Overview") {
-        const payload = JSON.parse(message.payloadString);
-        thisEstate.propertyGroups = payload.propertyGroups;
+        thisEstate.processEstateOverview(message);
       } else if (message.topic === "estate/online/thermostats"){
-        const payload = JSON.parse(message.payloadString);
-        console.log(payload);
-        const group = thisEstate.propertyGroups.find( (e) => {
-          return e.id === payload.groupId;
-        });
-        if (! group){
-          console.log("unexpected group " + payload.groupId)
-          return;
-        }
-        const property = group.children.find( (e) => {
-          return e.id === payload.id;
-        });
-        if (property){
-          property.online = payload.publishing;
-        }
-
+        thisEstate.processThermostatStatus(message);
       } else {
-        const payload = JSON.parse(message.payloadString);
-        const formattedTime = new Date(payload.time).toLocaleString([], {
-          hour: "numeric",
-          minute: "numeric",
-        });
-        thisEstate.thermostatSeries.values.push(payload.temperature);
-        thisEstate.thermostatSeries.labels.push(formattedTime);
-        const newLength = Math.min(
-          thisEstate.thermostatSeries.values.length,
-          15
-        );
-        thisEstate.thermostatSeries.values.length = newLength;
-        thisEstate.thermostatSeries.labels.length = newLength;
+        thisEstate.processThermostatData(message);
       }
     }
   },
@@ -144,6 +165,8 @@ export default {
       },
     ],
     thermostatSeries: {
+      groupId : -1,
+      propertyId : -1,
       labels: [],
       values: [],
     },

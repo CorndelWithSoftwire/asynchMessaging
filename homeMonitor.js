@@ -177,7 +177,7 @@ function subscribeToTopics() {
 
 const propertyGroups = [
     "unknown",
-    "The Avenuue",
+    "The Avenue",
     "Broadway",
     "Lexington",
     "Americas",
