@@ -15,6 +15,7 @@
         <v-treeview
           dense
           activatable
+          :active="activeItems"
           :items="propertyGroups"
           return-object
           @update:active="selectItem"
@@ -87,7 +88,7 @@ export default {
         // not selecting a property
         return;
       }
-      const propertyId = item[0].id;
+      const propertyId = item[0].propertyId;
       if (
         this.thermostatSeries.groupId >= 0 &&
         this.thermostatSeries.propertyId >= 0
@@ -113,14 +114,14 @@ export default {
       const payload = JSON.parse(message.payloadString);
       console.log(payload);
       const group = this.propertyGroups.find((e) => {
-        return e.id === payload.groupId;
+        return e.groupId === payload.groupId;
       });
       if (!group) {
         console.log("unexpected group " + payload.groupId);
         return;
       }
       const propertyIndex = group.children.findIndex((e) => {
-        return e.id === payload.id;
+        return e.propertyId === payload.id;
       });
       if (propertyIndex >= 0) {
         // easiest with Vue reactive arrays: replace entire item
@@ -147,11 +148,19 @@ export default {
     processEstateOverview(message) {
       const payload = JSON.parse(message.payloadString);
       // denormalise so that complete id of selected item is easier to get
-      payload.propertyGroups.forEach((group) => {
+      
+      // generate unique property ids
+      let uniqueId =  payload.propertyGroups.length ; 
+      payload.propertyGroups.forEach((group, gindex) => {
+        group.groupId = group.id;
+        group.id = gindex; // getting odd behaviour investigating if order of is matters
         group.children.forEach((property) => {
-          property.groupId = group.id;
+          property.propertyId = property.id;
+          property.id = uniqueId++;
+          property.groupId = group.groupId;
           property.groupName = group.name;
         });
+        
       });
       this.propertyGroups = payload.propertyGroups;
     },
@@ -197,6 +206,7 @@ export default {
         name: "Loading ...",
       },
     ],
+    activeItems : [],
     // display in graphe
     thermostatSeries: {
       groupId: -1,
