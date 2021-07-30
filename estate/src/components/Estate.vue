@@ -109,7 +109,11 @@ export default {
       this.thermostatSeries.groupName = item[0].groupName;
       this.thermostatSeries.propertyId = propertyId;
       this.thermostatSeries.propertyName = item[0].name;
+
+      return true;
     },
+    // each thermostat resports its status
+    // update the model and the UX will display an indicator
     processThermostatStatus(message) {
       const payload = JSON.parse(message.payloadString);
       console.log(payload);
@@ -132,30 +136,45 @@ export default {
         console.log("groups after property update", this.propertyGroups);
       }
     },
+    // subscribed to one thermostat at a time, add new values to display 
     processThermostatData(message) {
       const payload = JSON.parse(message.payloadString);
       const formattedTime = new Date(payload.time).toLocaleString([], {
         hour: "numeric",
-        minute: "numeric"
+        minute: "numeric",
+        second: "numeric"
       });
-      this.thermostatSeries.values.push(payload.temperature);
+     
+      // record latest value for UX o dispay
       this.thermostatSeries.latest = payload.temperature
+
+      // add the latest value and time to the arrays
+      this.thermostatSeries.values.push(payload.temperature);
       this.thermostatSeries.labels.push(formattedTime);
-      const newLength = Math.min(this.thermostatSeries.values.length, 15);
+
+      // truncate so graph doesn't grow indefinately
+      const newLength = Math.min(this.thermostatSeries.values.length, 8);
       this.thermostatSeries.values.length = newLength;
       this.thermostatSeries.labels.length = newLength;
     },
+    // HomeMonitor provides an estate hierarchy
+    // Perform some minor transformations to make data eaier to display
+    // in the tree and then later be able to identify an item that the user has selected:
+    // 1). Copy group id and name into each of its child properties
+    // 2). Give every item in the tree a unique id, otherwise wrong item is passed
+    // to selection callback.
     processEstateOverview(message) {
       const payload = JSON.parse(message.payloadString);
-      // denormalise so that complete id of selected item is easier to get
       
-      // generate unique property ids
+      // generate unique property ids, starting after highest group id
       let uniqueId =  payload.propertyGroups.length ; 
+
       payload.propertyGroups.forEach((group, gindex) => {
-        group.groupId = group.id;
-        group.id = gindex; // getting odd behaviour investigating if order of is matters
+        group.groupId = group.id; // the id by which the server knows this group
+        group.id = gindex; 
+
         group.children.forEach((property) => {
-          property.propertyId = property.id;
+          property.propertyId = property.id; // the id by which the server knows this property
           property.id = uniqueId++;
           property.groupId = group.groupId;
           property.groupName = group.name;
