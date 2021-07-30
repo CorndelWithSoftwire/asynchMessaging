@@ -32,6 +32,14 @@
     </v-row>
     <v-row color="grey">
       <v-col cols="12">
+        <v-card class="flex" flat tile>
+          <v-card-title class="blue darken-2">
+            <strong class="subheading"
+              >{{thermostatSeries.propertyName}} {{ thermostatSeries.groupName}} {{thermostatSeries.latest}}</strong
+            >
+            <v-spacer></v-spacer>
+          </v-card-title>
+        </v-card>
         <v-sparkline
           :value="thermostatSeries.values"
           :labels="thermostatSeries.labels"
@@ -69,59 +77,84 @@ export default {
   name: "Estate",
 
   methods: {
+    makeThermostatDataTopic(groupId, propertyId) {
+      return "estate/thermostats/" + groupId + "/" + propertyId;
+    },
     selectItem(item) {
       console.log("Selected ", item);
       const groupId = item[0].groupId;
+      if (!groupId) {
+        // not selecting a property
+        return;
+      }
       const propertyId = item[0].id;
-      myClient.subscribe("estate/thermostats/" + groupId + "/" + propertyId);
-    },
-    processThermostatStatus(message){
-       const payload = JSON.parse(message.payloadString);
-        console.log(payload);
-        const group = this.propertyGroups.find( (e) => {
-          return e.id === payload.groupId;
-        });
-        if (! group){
-          console.log("unexpected group " + payload.groupId)
-          return;
-        }
-        const propertyIndex = group.children.findIndex( (e) => {
-          return e.id === payload.id;
-        });
-        if (propertyIndex >= 0){
-          // experiment with what Vue treats as reactive
-          // replace the propery in the group array
-          const property = Object.assign({}, group.children[propertyIndex]);
-          property.online = payload.online;
-          this.$set( group.children, propertyIndex, property);
-          console.log("groups after property update",this.propertyGroups);
-        }
-    },
-    processThermostatData(message){
-        const payload = JSON.parse(message.payloadString);
-        const formattedTime = new Date(payload.time).toLocaleString([], {
-          hour: "numeric",
-          minute: "numeric",
-        });
-        this.thermostatSeries.values.push(payload.temperature);
-        this.thermostatSeries.labels.push(formattedTime);
-        const newLength = Math.min(
-          this.thermostatSeries.values.length,
-          15
+      if (
+        this.thermostatSeries.groupId >= 0 &&
+        this.thermostatSeries.propertyId >= 0
+      ) {
+        myClient.unsubscribe(
+          this.makeThermostatDataTopic(
+            this.thermostatSeries.groupId,
+            this.thermostatSeries.propertyId
+          ),
+          e => console.log("Unsubscribe error: ", e)
         );
-        this.thermostatSeries.values.length = newLength;
-        this.thermostatSeries.labels.length = newLength;
+        // new selection, clear graph
+        this.thermostatSeries.values.length = 0;
+        this.thermostatSeries.labels.length = 0;
+      }
+      myClient.subscribe(this.makeThermostatDataTopic(groupId, propertyId));
+      this.thermostatSeries.groupId = groupId;
+      this.thermostatSeries.groupName = item[0].groupName;
+      this.thermostatSeries.propertyId = propertyId;
+      this.thermostatSeries.propertyName = item[0].name;
     },
-    processEstateOverview(message){
-        const payload = JSON.parse(message.payloadString);
-        // denormalise so that complete id of selected item is easier to get
-        payload.propertyGroups.forEach( group => {
-             group.children.forEach ( property => {
-                  property.groupId = group.id;
-             })
-        })
-        this.propertyGroups = payload.propertyGroups;
-    }
+    processThermostatStatus(message) {
+      const payload = JSON.parse(message.payloadString);
+      console.log(payload);
+      const group = this.propertyGroups.find((e) => {
+        return e.id === payload.groupId;
+      });
+      if (!group) {
+        console.log("unexpected group " + payload.groupId);
+        return;
+      }
+      const propertyIndex = group.children.findIndex((e) => {
+        return e.id === payload.id;
+      });
+      if (propertyIndex >= 0) {
+        // easiest with Vue reactive arrays: replace entire item
+        const property = Object.assign({}, group.children[propertyIndex]);
+        property.online = payload.online;
+        // Vue helper for replacing array item
+        this.$set(group.children, propertyIndex, property);
+        console.log("groups after property update", this.propertyGroups);
+      }
+    },
+    processThermostatData(message) {
+      const payload = JSON.parse(message.payloadString);
+      const formattedTime = new Date(payload.time).toLocaleString([], {
+        hour: "numeric",
+        minute: "numeric"
+      });
+      this.thermostatSeries.values.push(payload.temperature);
+      this.thermostatSeries.latest = payload.temperature
+      this.thermostatSeries.labels.push(formattedTime);
+      const newLength = Math.min(this.thermostatSeries.values.length, 15);
+      this.thermostatSeries.values.length = newLength;
+      this.thermostatSeries.labels.length = newLength;
+    },
+    processEstateOverview(message) {
+      const payload = JSON.parse(message.payloadString);
+      // denormalise so that complete id of selected item is easier to get
+      payload.propertyGroups.forEach((group) => {
+        group.children.forEach((property) => {
+          property.groupId = group.id;
+          property.groupName = group.name;
+        });
+      });
+      this.propertyGroups = payload.propertyGroups;
+    },
   },
 
   mounted() {
@@ -138,7 +171,6 @@ export default {
       console.log("onConnect");
       myClient.subscribe("estate/Overview");
       myClient.subscribe("estate/online/thermostats");
-      
     }
     function onConnectionLost(responseObject) {
       if (responseObject.errorCode !== 0)
@@ -149,7 +181,7 @@ export default {
       console.log("onMessageArrived:" + message.topic + ":");
       if (message.topic === "estate/Overview") {
         thisEstate.processEstateOverview(message);
-      } else if (message.topic === "estate/online/thermostats"){
+      } else if (message.topic === "estate/online/thermostats") {
         thisEstate.processThermostatStatus(message);
       } else {
         thisEstate.processThermostatData(message);
@@ -158,26 +190,33 @@ export default {
   },
 
   data: () => ({
+    // diplay in tree, start with fake item
     propertyGroups: [
       {
         id: 0,
         name: "Loading ...",
       },
     ],
+    // display in graphe
     thermostatSeries: {
-      groupId : -1,
-      propertyId : -1,
+      groupId: -1,
+      groupName : "",
+      propertyId: -1,
+      propertyName: "",
+      latest: "",
       labels: [],
       values: [],
     },
+    // presentation style for graph
     thermostatGraphDef: {
       width: 2,
       radius: 10,
       padding: 8,
       lineCap: "round",
       gradient: gradients[5],
-      labels: ["12am", "3am", "6am", "9am", "12pm", "3pm", "6pm", "9pm"],
-      value: [0, 2, 5, 9, 5, 10, 3, 5, 0, 0, 1, 8, 2, 9, 0],
+      labels: [],
+      'label-size': 5,
+      value: [],
       gradientDirection: "top",
       gradients,
       fill: false,
