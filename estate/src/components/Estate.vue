@@ -12,23 +12,14 @@
     </v-row>
     <v-row color="primary">
       <v-col cols="12">
-        <v-treeview
-          dense
-          activatable
-          :active="activeItems"
-          :items="propertyGroups"
-          return-object
-          @update:active="selectItem"
-        >
-          <template v-slot:prepend="{ item, open }">
-            <v-icon v-if="item.children" color="blue darken-2">
-              {{ open ? "mdi-folder-open" : "mdi-folder" }}
-            </v-icon>
-            <v-icon v-else v-bind:color="item.online ? 'green' : 'red'">
-              {{ item.online ? "mdi-thermometer" : "mdi-thermometer-off" }}
-            </v-icon>
-          </template>
-        </v-treeview>
+         <v-card class="flex" flat tile>
+          <v-card-title class="blue darken-2">
+            <strong class="subheading"
+              >Replace with an overview of Estate</strong
+            >
+            <v-spacer></v-spacer>
+          </v-card-title>
+        </v-card>
       </v-col>
     </v-row>
     <v-row color="grey">
@@ -36,25 +27,14 @@
         <v-card class="flex" flat tile>
           <v-card-title class="blue darken-2">
             <strong class="subheading"
-              >{{thermostatSeries.propertyName}} {{ thermostatSeries.groupName}} {{thermostatSeries.latest}}</strong
+              >Replace with summary of selected Property</strong
             >
             <v-spacer></v-spacer>
+           
           </v-card-title>
+           <strong class="subheading"
+              >Replace with a representation of live or historic Telemetry</strong>
         </v-card>
-        <v-sparkline
-          :value="thermostatSeries.values"
-          :labels="thermostatSeries.labels"
-          :gradient="thermostatGraphDef.gradient"
-          :smooth="thermostatGraphDef.radius || false"
-          :padding="thermostatGraphDef.padding"
-          :line-width="thermostatGraphDef.width"
-          :stroke-linecap="thermostatGraphDef.lineCap"
-          :gradient-direction="thermostatGraphDef.gradientDirection"
-          :fill="thermostatGraphDef.fill"
-          :type="thermostatGraphDef.type"
-          :auto-line-width="thermostatGraphDef.autoLineWidth"
-          auto-draw
-        ></v-sparkline>
       </v-col>
     </v-row>
   </v-container>
