@@ -89,7 +89,7 @@ export default {
     function onMessageArrived(message) {
       console.log("onMessageArrived:" + message.topic + ":");
       if (message.topic === "some/topic") {
-        thisEstate.processXyy(message);
+        thisEstate.processXxx(message);
       } else if (message.topic === "some/different/topic") {
         // adjust to call suitable method
         // thisEstate.processYyy(message);
