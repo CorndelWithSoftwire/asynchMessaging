@@ -15,7 +15,7 @@
          <v-card class="flex" flat tile>
           <v-card-title class="blue darken-2">
             <strong class="subheading"
-              >Replace with an overview of Estate</strong
+              >Replace with an overview of Estate {{estateName}}</strong
             >
             <v-spacer></v-spacer>
           </v-card-title>
