@@ -29,20 +29,21 @@ const header = {
 };
 
 try {
-    let mqConnection = await ActiveMq.getConnection();
-    let mqConnection2 = await ActiveMq.getConnection();
-   
+    let mqConnection = await ActiveMq.getConnection(
+        "localhost",
+        61613,
+        {
+            retries: 10,  // reduce these for testing errors
+            delay: 10000
+        }
+    );
+
     mqConnection.publish(reqQueueSpec, requestText, header);
 
-    mqConnection2.publish(reqQueueSpec, requestText + " other", header);
-
     let result = await ActiveMq.disconnect(mqConnection);
-    console.log("done", result);  
+    console.log("done", result);
 
-    let result2 = await ActiveMq.disconnect(mqConnection2);
-    console.log("done other", result2); 
-    
-        
+
 } catch (e) {
     console.log("Caught", e);
 };

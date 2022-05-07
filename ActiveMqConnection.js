@@ -8,23 +8,30 @@ import StompClient from "stomp-client";
 // You can also call disconnect() when your application is about to shut down.
 // After this the application cannot reconnect, in normal running reconnections
 // are managed by the library.
+//
+// TODO: better to have an OO solution so that we can call disconnect on connection object
+// rather ugly to pass connection to disconnect
 // 
 
 
 
 
 var ActiveMqConnection = {
-   getConnection: function (SERVER_ADDRESS = '127.0.0.1', SERVER_PORT = 61613) {
+   getConnection: function (
+          SERVER_ADDRESS = '127.0.0.1', 
+          SERVER_PORT = 61613,
+          CONFIG =  {
+            retries : 50,
+            delay : 1000
+         }
+      ) {
      
       var thePromise = new Promise((resolve, reject) => {
       
          var myClient = new StompClient(
             SERVER_ADDRESS, SERVER_PORT, 
             '', '', '1.0', null, 
-            {
-               retries : 50,
-               delay : 1000
-            }
+            CONFIG
             );
          myClient.on("connect",
             (e) => console.log("connected " + e)
