@@ -1,15 +1,27 @@
 
-ActiveMq = require("./ActiveMqConnection.js");
+import { Channel } from 'queueable';
+import ActiveMq from "./ActiveMqConnection.js";
 
-// Example Consumer
+const channel = new Channel();
 
-ActiveMq.getConnection().then(
-    ( mqConnection  ) => {
-        var QUEUE = '/queue/oneway';
-        mqConnection.subscribe(QUEUE, (data, headers) => {
-           console.log('GOT A MESSAGE', data, headers);
-        });  
-    }
-).catch( e => console.log(e) );
+let mqConnection = await ActiveMq.getConnection();
+
+let queueName = process.argv[2];
+if (!queueName || queueName.length == 0) {
+    queueName = "defaultReq";
+}
+const reqQueueSpec = "/queue/" + queueName;
+  
+mqConnection.subscribe(queueName, 
+      (data, headers) => 
+          console.log(headers)
+);
+
+console.log("subscribed to ", reqQueueSpec);
+
+// for-await-of uses the async iterable protocol to consume the queue sequentially
+for await (const n of channel) {
+  console.log("received", n); 
+}
 
 
