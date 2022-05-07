@@ -1,5 +1,5 @@
 
-ActiveMq = require("./ActiveMqConnection.js");
+import ActiveMq from "./ActiveMqConnection.js";
 
 // Send one request
 //

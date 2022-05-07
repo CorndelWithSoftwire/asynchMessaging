@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "description": "Messaging and asynchronous communication patterns.",
   "main": "publish.js",
+  "type": "module",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },

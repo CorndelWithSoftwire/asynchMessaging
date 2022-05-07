@@ -1,7 +1,7 @@
 'use strict';
-var StompClient = require("stomp-client");
+import StompClient from "stomp-client";
 
-// Wrapper for a Stop conenction to ActiveMQ
+// Wrapper for a Stomp conenction to ActiveMQ
 //
 // getConnection() returns a Promise that resolves to a stomp-client 
 // which can the be used for publish() subscribe() 
@@ -77,4 +77,4 @@ ActiveMqConnection.getConnection().then(
 ).catch( (e) => console.log(e)); 
 */
 
-module.exports = ActiveMqConnection;
+export default ActiveMqConnection;
