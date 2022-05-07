@@ -28,17 +28,23 @@ const header = {
     priority: requestPriority
 };
 
-ActiveMq.getConnection().then(
-    (mqConnection) => {
-        mqConnection.publish(reqQueueSpec, requestText, header);
+try {
+    let mqConnection = await ActiveMq.getConnection();
+    let mqConnection2 = await ActiveMq.getConnection();
+   
+    mqConnection.publish(reqQueueSpec, requestText, header);
+
+    mqConnection2.publish(reqQueueSpec, requestText + " other", header);
+
+    let result = await ActiveMq.disconnect(mqConnection);
+    console.log("done", result);  
+
+    let result2 = await ActiveMq.disconnect(mqConnection2);
+    console.log("done other", result2); 
+    
         
-        const timeout = 1000; // 1000 * 60 * 3 
-        setTimeout(() => {
-            mqConnection.disconnect(
-                () => console.log('DISCONNECTED')
-            );
-        }, timeout);
-    }
-).catch(e => console.log(e));
+} catch (e) {
+    console.log("Caught", e);
+};
 
 

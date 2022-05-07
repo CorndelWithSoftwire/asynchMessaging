@@ -11,17 +11,13 @@ import StompClient from "stomp-client";
 // 
 
 
-var connectedClient = null;
+
 
 var ActiveMqConnection = {
    getConnection: function (SERVER_ADDRESS = '127.0.0.1', SERVER_PORT = 61613) {
-      // TODO: enable credentialws
-
+     
       var thePromise = new Promise((resolve, reject) => {
-         if (connectedClient != null) {
-            resolve(connectedClient);
-         }
-
+      
          var myClient = new StompClient(
             SERVER_ADDRESS, SERVER_PORT, 
             '', '', '1.0', null, 
@@ -43,8 +39,8 @@ var ActiveMqConnection = {
          myClient.connect(
             () => {
                console.log("STOMP client connected.");
-               connectedClient = myClient;
-               resolve(connectedClient);
+              
+               resolve(myClient);
             },
             (e) => {
                console.log("connection failed " + e);
@@ -53,28 +49,35 @@ var ActiveMqConnection = {
          );
       });
       return thePromise;
+   },
+
+   disconnect: function (connection) {
+     
+      var thePromise = new Promise((resolve, reject) => {
+         connection.disconnect(
+            () => resolve("disconnected")
+         )
+      });
+
+      return thePromise;
    }
+   
 };
 
 // Example usage
 
 /* 
-ActiveMqConnection.getConnection().then(
-
-   (connection) => {
-      var QUEUE = '/queue/thing';
-      connection.subscribe(QUEUE, function (data, headers) {
-         console.log('GOT A MESSAGE', data, headers);
-      });
-      connection.publish(QUEUE, 'A message!');
-
-      setTimeout(function () {
-         connection.disconnect(function () {
-            console.log('DISCONNECTED');
-         });
-      }, 5000);
-   }
-).catch( (e) => console.log(e)); 
+try {
+    let mqConnection = await ActiveMq.getConnection();
+   
+    mqConnection.publish(reqQueueSpec, requestText, header);
+    let result = await ActiveMq.disconnect(mqConnection);
+    console.log("done", result);  
+    
+        
+} catch (e) {
+    console.log("Caught", e);
+};
 */
 
 export default ActiveMqConnection;
