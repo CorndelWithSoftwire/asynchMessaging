@@ -1,6 +1,9 @@
+# subscribe to queue
+# displays body and headers of received messages
+# usage: python receive.py [queue]
+# default queue is roomBooking
+# the ActiveMQ prefix /queue/ will be added to the queue name
 
-# Messaging example and infrastructure test
-# Subscribes to test queue and sends message, when received display header
 import time
 import sys
 
@@ -14,14 +17,19 @@ class MyListener(stomp.ConnectionListener):
         print('received a message "%s"' % frame.body)
         print('headers  "%s"' % frame.headers)
 
-print('Connecting ...')
 conn = stomp.Connection()
 conn.set_listener('', MyListener())
 conn.connect('admin', 'admin', wait=True)
-print('Connected')
-conn.subscribe(destination='/queue/test', id=1, ack='auto')
-conn.send(body='   '.join(sys.argv[1:]), destination='/queue/test')
-time.sleep(2)
+
+queueName = "roomBooking"
+if len(sys.argv) > 1 and len(sys.argv[1]) > 0 :
+    queueName = sys.argv[1]
+
+queueId = "/queue/" + queueName
+
+conn.subscribe(destination=queueId, id=1, ack='auto')
+print('subscribed to ' + queueId)
+time.sleep(200)
 conn.disconnect()
 print('shutdown')
 
