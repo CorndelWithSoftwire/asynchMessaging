@@ -1,8 +1,11 @@
 # subscribe to queue
 # displays body and headers of received messages
-# usage: python receive.py [queue]
+# usage: python receive.py [queue] [selector]
 # default queue is roomBooking
 # the ActiveMQ prefix /queue/ will be added to the queue name
+#
+# the selector should be quoted so that the shell passes a single string
+# any selector can be specified, for example "JMSPriority >= 3"
 
 import time
 import sys
