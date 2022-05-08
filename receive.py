@@ -12,6 +12,8 @@ import sys
 
 import stomp
 
+conn = stomp.Connection()
+
 class MyListener(stomp.ConnectionListener):
     def on_error(self, frame):
         print('received an error "%s"' % frame.body)
@@ -19,8 +21,18 @@ class MyListener(stomp.ConnectionListener):
     def on_message(self, frame):
         print('received a message "%s"' % frame.body)
         print('headers  "%s"' % frame.headers)
+        responseHeaders = {}
+        responseHeaders['priority'] = frame.headers['priority']
+        responseHeaders['correlation-id'] = frame.headers['correlation-id']
+        responseQueue = frame.headers['reply-to']
+        if len(responseQueue) == 0:
+             responseQueue = "unspeciedResponseQueue"
+        responseDestination = "/queue/" + responseQueue
+        responseBody = frame.body + ":OK"
+        conn.send(body=responseBody, destination=responseDestination, headers=responseHeaders)
+        print('sent response ' + responseBody)
 
-conn = stomp.Connection()
+
 conn.set_listener('', MyListener())
 conn.connect('admin', 'admin', wait=True)
 

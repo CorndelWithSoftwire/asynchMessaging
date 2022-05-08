@@ -4,20 +4,29 @@
 # the ActiveMQ prefix /queue/ will be added to the queue name
 
 import time
+import datetime
 import sys
+import json
 
 import stomp
 
-class MyListener(stomp.ConnectionListener):
+requests = {}
+
+
+class ResultListener(stomp.ConnectionListener):
     def on_error(self, frame):
         print('received an error "%s"' % frame.body)
 
     def on_message(self, frame):
         print('received a message "%s"' % frame.body)
         print('headers  "%s"' % frame.headers)
+        correlationId = frame.headers['correlation-id']
+        print(json.dumps(requests))
+        print ( requests.get(correlationId, "no correlated request for " + correlationId))
+            
 
 conn = stomp.Connection()
-conn.set_listener('', MyListener())
+conn.set_listener('', ResultListener())
 conn.connect('admin', 'admin', wait=True)
 
 message = "BookRoom:101"
@@ -40,11 +49,33 @@ except ValueError:
     
 queueId = "/queue/" + queueName
 
+responseQueueName = "roomResponse"
+responseQueueId = "/queue/" + responseQueueName
+
 headers = {}
 headers['priority'] = priority
-headers['djna'] = "wibble"
+headers['reply-to'] = responseQueueName
 
+# two different messages, testing corellation
+requestId = str(datetime.datetime.now().timestamp())
+headers['correlation-id'] = requestId
+requests[requestId] = "one"
 conn.send(body=message, destination=queueId, headers=headers)
+
+requestId = str(datetime.datetime.now().timestamp())
+headers['correlation-id'] = requestId
+requests[requestId] = "two"
+conn.send(body=message, destination=queueId, headers=headers)
+
+print('sent to:' + queueId)
+print(json.dumps(requests))
+
+conn.subscribe(destination=responseQueueId, id=1, ack='auto', headers=headers)
+print('subscribed to ' + responseQueueId)
+
+time.sleep(100)
 conn.disconnect()
-print('sent :' + message + ": to " + queueId)
+
+
+
 
