@@ -10,10 +10,24 @@ import json
 
 import stomp
 
+# state for correlation
 requests = {}
 
-# a unique id for this client subscribing
-subscriptionId = 67 
+message = "BookRoom:101"
+if len(sys.argv) > 1 and len(sys.argv[1]) > 0 :
+    message = sys.argv[1]
+
+queueName = "roomBooking"
+if len(sys.argv) > 2 and len(sys.argv[2]) > 0 :
+    queueName = sys.argv[2]
+
+priorityString = "1"
+if len(sys.argv) > 3 and len(sys.argv[3]) > 0 :
+    priorityString = sys.argv[3]
+
+
+ackIfGood =  len(sys.argv) <= 4 or len(sys.argv[4]) == 0 
+   
 
 class ResultListener(stomp.ConnectionListener):
     def on_error(self, frame):
@@ -28,33 +42,31 @@ class ResultListener(stomp.ConnectionListener):
         else:
             print('headers  "%s"' % frame.headers)
             correlationId = frame.headers['correlation-id']
+            # a unique id for this client subscribing
+            subscription = frame.headers['subscription']
             print(json.dumps(requests))
             print ( "correlates: " + requests.get(correlationId, "no correlated request for " + correlationId))
-            conn.ack(frame.headers['message-id'], subscriptionId)
+            if ackIfGood:
+                print("ack")
+                conn.ack(frame.headers['message-id'], subscription)
+            else:
+                print("not acking")
             
 
 conn = stomp.Connection()
 conn.set_listener('', ResultListener())
 conn.connect('admin', 'admin', wait=True)
 
-message = "BookRoom:101"
-if len(sys.argv) > 1 and len(sys.argv[1]) > 0 :
-    message = sys.argv[1]
 
-queueName = "roomBooking"
-if len(sys.argv) > 2 and len(sys.argv[2]) > 0 :
-    queueName = sys.argv[2]
-
-priorityString = "1"
-if len(sys.argv) > 3 and len(sys.argv[3]) > 0 :
-    priorityString = sys.argv[3]
 
 priority = 1
 try:
     priority = int(priorityString)
 except ValueError:
     print(f"{priorityString} is not a valid integer, using default {priority}.")
-    
+
+
+
 queueId = "/queue/" + queueName
 
 responseQueueName = "roomResponse"
@@ -70,10 +82,18 @@ headers['correlation-id'] = requestId
 requests[requestId] = "one"
 conn.send(body=message, destination=queueId, headers=headers)
 
+requestId = str(datetime.datetime.now().timestamp())
+headers['correlation-id'] = requestId
+requests[requestId] = "two"
+conn.send(body=message+":two", destination=queueId, headers=headers)
+
 print('sent to:' + queueId)
 print(json.dumps(requests))
 
-conn.subscribe(destination=responseQueueId, id=subscriptionId, ack='client-individual', headers=headers)
+# a unique id for this client subscribing
+subscriptionId = 67 
+
+conn.subscribe(destination=responseQueueId, id=subscriptionId, ack='client-individual')
 print('subscribed to ' + responseQueueId)
 
 time.sleep(100)
