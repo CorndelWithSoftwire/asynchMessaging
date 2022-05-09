@@ -12,6 +12,8 @@ import stomp
 
 requests = {}
 
+# a unique id for this client subscribing
+subscriptionId = 67 
 
 class ResultListener(stomp.ConnectionListener):
     def on_error(self, frame):
@@ -19,10 +21,16 @@ class ResultListener(stomp.ConnectionListener):
 
     def on_message(self, frame):
         print('received a message "%s"' % frame.body)
-        print('headers  "%s"' % frame.headers)
-        correlationId = frame.headers['correlation-id']
-        print(json.dumps(requests))
-        print ( requests.get(correlationId, "no correlated request for " + correlationId))
+        # test nack by rejecting some responses
+        if not frame.body.startswith("book:"):
+            print("unexpected response " + frame.body)
+            conn.nack(frame.headers['message-id'], subscriptionId)
+        else:
+            print('headers  "%s"' % frame.headers)
+            correlationId = frame.headers['correlation-id']
+            print(json.dumps(requests))
+            print ( "correlates: " + requests.get(correlationId, "no correlated request for " + correlationId))
+            conn.ack(frame.headers['message-id'], subscriptionId)
             
 
 conn = stomp.Connection()
@@ -62,15 +70,10 @@ headers['correlation-id'] = requestId
 requests[requestId] = "one"
 conn.send(body=message, destination=queueId, headers=headers)
 
-requestId = str(datetime.datetime.now().timestamp())
-headers['correlation-id'] = requestId
-requests[requestId] = "two"
-conn.send(body=message, destination=queueId, headers=headers)
-
 print('sent to:' + queueId)
 print(json.dumps(requests))
 
-conn.subscribe(destination=responseQueueId, id=1, ack='auto', headers=headers)
+conn.subscribe(destination=responseQueueId, id=subscriptionId, ack='client-individual', headers=headers)
 print('subscribed to ' + responseQueueId)
 
 time.sleep(100)

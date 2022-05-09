@@ -24,6 +24,7 @@ class MyListener(stomp.ConnectionListener):
         responseHeaders = {}
         responseHeaders['priority'] = frame.headers['priority']
         responseHeaders['correlation-id'] = frame.headers['correlation-id']
+        responseHeaders['persistent'] = 'true'
         responseQueue = frame.headers['reply-to']
         if len(responseQueue) == 0:
              responseQueue = "unspeciedResponseQueue"
@@ -50,7 +51,7 @@ queueId = "/queue/" + queueName
 
 conn.subscribe(destination=queueId, id=1, ack='auto', headers=headers)
 print('subscribed to ' + queueId)
-time.sleep(200)
+time.sleep(2000)
 conn.disconnect()
 print('shutdown')
 
