@@ -96,7 +96,7 @@ subscriptionId = 67
 conn.subscribe(destination=responseQueueId, id=subscriptionId, ack='client-individual')
 print('subscribed to ' + responseQueueId)
 
-time.sleep(100)
+time.sleep(1000)
 conn.disconnect()
 
 
