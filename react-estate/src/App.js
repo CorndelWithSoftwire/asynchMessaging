@@ -1,22 +1,27 @@
-import logo from './logo.svg';
+
 import './App.css';
 
+var Stomp = require('stompjs');
+
 function App() {
+   var url = "ws://localhost:61614/stomp";
+   var client = Stomp.client(url);
+
+client.connect(function(sessionId) {
+    client.subscribe(destination, function(body, headers) {
+      console.log('This is the body of a message on the subscribed queue:', body);
+    });
+
+    client.publish(destination, 'Oh herrow');
+}); 
   return (
     <div className="App">
       <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
+       
         <p>
-          Edit <code>src/App.js</code> and save to reload.
+          Estate goes here
         </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
+    
       </header>
     </div>
   );
