@@ -1,44 +1,41 @@
 
 import './App.css';
 
-var Stomp = require('stompjs');
-
+import { Client } from "paho-mqtt";
+let myClient;
 
 function App() {
-  var url = "ws://localhost:61614/stomp";
-  var myClient = Stomp.client(url);
-  myClient.debug = () => {};
-  var overviewDestination = "/topic/estate.Overview";
-  //var thermostatDestination = "estate.online.thermostats";
 
-  // uncomment to reduce noise, comment out for normal running
-  //myClient.heartbeat.outgoing = 1_000_000_000; 
-   
-  var headers = {
-    'client-id': 'estateView'
-  };
+  // save "this" for use in Websocket callbacks
+  //const thisEstate = this;
 
-  myClient.reconnect_delay = 5000;
-  myClient.connect( "", "", onConnect, onConnectError);
-
-  function onConnectError(e) {
-      console.log("onConnectError", e);
-  }
+  myClient = new Client("localhost", 61614, "estateMonitor");
+  myClient.onConnectionLost = onConnectionLost;
+  myClient.onMessageArrived = onMessageArrived;
+  myClient.connect({ onSuccess: onConnect });
 
   function onConnect() {
     // Once a connection has been made, make a subscription and send a message.
     console.log("onConnect");
-    myClient.subscribe(overviewDestination, onOverview, { 'activemq.retroactive':'true' });
-    //myClient.subscribe(thermostatDestination, onThermostatReading);
+    myClient.subscribe("estate/Overview");
+    myClient.subscribe("estate/online/thermostats");
+  }
+  function onConnectionLost(responseObject) {
+    if (responseObject.errorCode !== 0)
+      console.log("onConnectionLost:" + responseObject.errorMessage);
   }
 
-  function onOverview(body, headers) {
-    console.log('This is the body of a message on the overview queue:', body);
+  function onMessageArrived(message) {
+    console.log("onMessageArrived:" + message.topic + ":");
+    if (message.topic === "estate/Overview") {
+      //thisEstate.processEstateOverview(message);
+    } else if (message.topic === "estate/online/thermostats") {
+      //thisEstate.processThermostatStatus(message);
+    } else {
+      //thisEstate.processThermostatData(message);
+    }
   }
 
-  //function onThermostatReading(body, headers) {
-  //  console.log('This is the body of a message on the thermostat queue:', body);
-  //}
 
   return (
     <div className="App">
