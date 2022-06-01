@@ -1,24 +1,16 @@
 
-import React, { Component } from 'react';
+import React from 'react';
 
-class EstateOverview extends Component {
-    constructor(props) {
-      super(props);
-      this.state = {
-      };
-    }
+function EstateOverview(props) {
   
-    render() {
-      if ( ! this.props.estateOverview ){
+    if (!props.estateOverview) {
         return;
-      }
-      return (
-        <div>
-          <h2>Estate {this.props.estateOverview.propertyGroups[0].name}</h2>
-        </div>
-      );
     }
-    
-  }
+    return (
+        <div>
+            <h2>Estate {props.estateOverview.propertyGroups[0].name}</h2>
+        </div>
+    );
+}
 
-  export default EstateOverview
+export default EstateOverview
