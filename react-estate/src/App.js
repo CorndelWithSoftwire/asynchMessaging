@@ -1,5 +1,6 @@
 
 import './App.css';
+import EstateOverview from "./components/EstateOverview.js";
 
 import React, { Component } from 'react';
 import { Client } from "paho-mqtt";
@@ -28,6 +29,7 @@ function App() {
 
 
 
+
 class Estate extends Component {
   constructor(props) {
     super(props);
@@ -38,7 +40,7 @@ class Estate extends Component {
     return (
       <div>
         <h1>Estate {this.props.estateName}</h1>
-        {this.state.estateOverview && <h2>Estate {this.state.estateOverview.propertyGroups[0].name}</h2>}
+        <EstateOverview estateOverview={this.state.estateOverview} />
       </div>
     );
   }
