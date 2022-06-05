@@ -1,13 +1,23 @@
 
 import '../App.css';
-import EstateOverview from "./EstateOverview.js";
 
 import React, { useEffect, useState } from 'react';
 import { Client } from "paho-mqtt";
 
+import AppBar from '@mui/material/AppBar';
+import Box from '@mui/material/Box';
+import Toolbar from '@mui/material/Toolbar';
+import Typography from '@mui/material/Typography';
+import IconButton from '@mui/material/IconButton';
+import MenuIcon from '@mui/icons-material/Menu';
+
+import EstateOverview from "./EstateOverview.js";
+
 function Estate(props) {
 
-  const [ estateOverview, setEstateOverview] = useState();
+  const [estateDetails, setEstateDetails] = useState();
+  const overviewTopic = props.estateName + "/Overview";
+  const thermostatsTopic = props.estateName + "/online/thermostats";
 
   useEffect(() => {
 
@@ -19,8 +29,8 @@ function Estate(props) {
     function onConnect() {
       // Once a connection has been made, make a subscription and send a message.
       console.log("onConnect");
-      myClient.subscribe("estate/Overview");
-      myClient.subscribe("estate/online/thermostats");
+      myClient.subscribe(overviewTopic);
+      myClient.subscribe(thermostatsTopic);
     }
 
     function onConnectionLost(responseObject) {
@@ -30,10 +40,14 @@ function Estate(props) {
 
     function onMessageArrived(message) {
       console.log("onMessageArrived:" + message.topic + ":");
-      if (message.topic === "estate/Overview") {
+      if (message.topic === overviewTopic) {
         // TODO - validate message
         let estateOverview = JSON.parse(message.payloadString);
-        setEstateOverview(estateOverview);
+        let estateDetails = {
+          "estateName" : props.estateName,
+          "estateOverview" : estateOverview
+          };
+        setEstateDetails(estateDetails);
       } else if (message.topic === "estate/online/thermostats") {
         //thisEstate.processThermostatStatus(message);
       } else {
@@ -43,12 +57,28 @@ function Estate(props) {
   });
 
   return (
-    <div>
-      <h1>Estate {props.estateName}</h1>
-      <EstateOverview estateOverview={estateOverview} />
-    </div>
+    <Box sx={{ flexGrow: 1 }}>
+      <AppBar position="static">
+        <Toolbar>
+          <IconButton
+            size="large"
+            edge="start"
+            color="inherit"
+            aria-label="menu"
+            sx={{ mr: 2 }}
+          >
+            <MenuIcon />
+          </IconButton>
+          <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
+            Estate Monitor - {props.estateName}
+          </Typography>
+          
+        </Toolbar>
+      </AppBar>
+      <EstateOverview estate={estateDetails} />
+    </Box>
   );
-};
+}
 
 
 export default Estate;

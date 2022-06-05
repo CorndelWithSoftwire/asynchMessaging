@@ -11,10 +11,10 @@ var mqtt = require('async-mqtt');
 //
 // raises problem if temperature is below threshold for specified duration
 
-const estateInfoTopic = "estate/Overview";
-const thermostatStatusTopic = "estate/online/thermostats";
-const dataTopicRoot = 'estate/thermostats';
-const willTopicRoot = 'estate/status';
+const estateInfoTopic = "SunnyVista/Overview";
+const thermostatStatusTopic = "SunnyVista/online/thermostats";
+const dataTopicRoot = 'SunnyVista/thermostats';
+const willTopicRoot = 'SunnyVista/status';
 const dataTopicWild = dataTopicRoot + "/#";
 const willTopicWild = willTopicRoot + "/#";
 

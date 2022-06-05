@@ -21,9 +21,9 @@ if (!propertyName || propertyName.length == 0) {
 }
 
 console.log("Thermostat group/property: " + groupId + "/" + propertyId);
-const dataTopic = 'estate/thermostats/' + groupId + "/" + propertyId;
+const dataTopic = 'SunnyVista/thermostats/' + groupId + "/" + propertyId;
 
-const willTopic = 'estate/status/' + groupId + "/" + propertyId;
+const willTopic = 'SunnyVista/status/' + groupId + "/" + propertyId;
 
 // time recorded for connected status too
 const timeStarted = new Date().getTime();
