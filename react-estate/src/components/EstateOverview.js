@@ -2,14 +2,11 @@
 import React from 'react';
 
 import Box from '@mui/material/Box';
-import Typography from '@mui/material/Typography';
 
 import ListSubheader from '@mui/material/ListSubheader';
 import List from '@mui/material/List';
 
-
-
-import PropertyItem from "./PropertyItem.js";
+import PropertyGroup from "./PropertyGroup.js";
 
 function EstateOverview(props) {
 
@@ -33,7 +30,7 @@ function EstateOverview(props) {
         }
       >
 
-        {props.estate.estateOverview.propertyGroups.map((group) => PropertyItem(group))}
+        {props.estate.estateOverview.propertyGroups.map((group) => PropertyGroup(group))}
 
 
       </List>
