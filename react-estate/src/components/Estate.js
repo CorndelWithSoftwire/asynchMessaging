@@ -15,7 +15,10 @@ import EstateOverview from "./EstateOverview.js";
 
 function Estate(props) {
 
-  const [estateDetails, setEstateDetails] = useState();
+  const [estateOverview, setEstateOverview] = useState( 
+         { "propertyGroups" : [] }
+      );
+  
   const overviewTopic = props.estateName + "/Overview";
   const thermostatsTopic = props.estateName + "/online/thermostats";
 
@@ -43,11 +46,8 @@ function Estate(props) {
       if (message.topic === overviewTopic) {
         // TODO - validate message
         let estateOverview = JSON.parse(message.payloadString);
-        let estateDetails = {
-          "estateName" : props.estateName,
-          "estateOverview" : estateOverview
-          };
-        setEstateDetails(estateDetails);
+      
+        setEstateOverview(estateOverview);
       } else if (message.topic === "estate/online/thermostats") {
         //thisEstate.processThermostatStatus(message);
       } else {
@@ -75,7 +75,7 @@ function Estate(props) {
           
         </Toolbar>
       </AppBar>
-      <EstateOverview estate={estateDetails} />
+      <EstateOverview estateName={props.estateName}  estateOverview={estateOverview} />
     </Box>
   );
 }

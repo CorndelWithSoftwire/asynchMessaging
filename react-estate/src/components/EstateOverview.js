@@ -6,11 +6,15 @@ import Box from '@mui/material/Box';
 import ListSubheader from '@mui/material/ListSubheader';
 import List from '@mui/material/List';
 
+
+
 import PropertyGroup from "./PropertyGroup.js";
+import PropertyGraph from './PropertyGraph.js';
 
 function EstateOverview(props) {
 
-  if (!props.estate) {
+
+  if (!props.estateOverview || !props.estateName) {
     return;
   }
 
@@ -25,15 +29,17 @@ function EstateOverview(props) {
         aria-labelledby="nested-list-subheader"
         subheader={
           <ListSubheader component="div" id="nested-list-subheader">
-            {props.estate.estateName} Property Groups
+            {props.estateName} Property Groups
         </ListSubheader>
         }
       >
 
-        {props.estate.estateOverview.propertyGroups.map((group) => PropertyGroup(group))}
+        {props.estateOverview.propertyGroups.map((group) => PropertyGroup(group))}
 
 
       </List>
+
+      
     </Box>
   );
 }

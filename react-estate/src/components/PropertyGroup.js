@@ -30,9 +30,9 @@ function PropertyGroup(props) {
 
     return (
 
-        <Box>
+        <Box >
 
-            <ListItemButton onClick={handleClick}>
+            <ListItemButton  key={props.name} onClick={handleClick}>
                 <ListItemIcon>
                     <InboxIcon />
                 </ListItemIcon>
