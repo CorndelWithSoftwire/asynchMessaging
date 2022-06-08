@@ -29,7 +29,7 @@ function PropertyItem(props) {
 
     return (
         
-            <Box>
+            <Box key={props.name}>
              
                 <ListItemButton onClick={handleClick}>
                     <ListItemIcon>
