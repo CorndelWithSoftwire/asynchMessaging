@@ -38,6 +38,9 @@ function EstateOverview(props) {
 
 
       </List>
+      <PropertyGraph>
+        
+      </PropertyGraph>
 
       
     </Box>
