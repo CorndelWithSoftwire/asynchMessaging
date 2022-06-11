@@ -17,10 +17,10 @@ import Box from '@mui/material/Box';
 
 function PropertyItem(props) {
 
-    const [open, setOpen] = React.useState(false);
+    //const [open, setOpen] = React.useState(false);
 
     const handleClick = () => {
-        setOpen(!open);
+        //setOpen(!open);
     };
 
     if (!props.name) {

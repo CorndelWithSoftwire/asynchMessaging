@@ -12,13 +12,8 @@ import PropertyGroup from "./PropertyGroup.js";
 import PropertyGraph from './PropertyGraph.js';
 
 function EstateOverview(props) {
-
-  
-
-  
-
  
-  const [graphData, setGraphData] = React.useState([]);
+  //const [graphData, setGraphData] = React.useState([]);
 
   const oneGraph = {
     id : 1,
@@ -31,6 +26,8 @@ function EstateOverview(props) {
       { x: 10, y: 8 }
   ]
   };
+
+  const graphData = [ oneGraph];
 
   if (!props.estateOverview || !props.estateName) {
     return;
