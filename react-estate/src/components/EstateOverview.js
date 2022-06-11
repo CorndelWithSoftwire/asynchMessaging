@@ -13,11 +13,28 @@ import PropertyGraph from './PropertyGraph.js';
 
 function EstateOverview(props) {
 
+  
+
+  
+
+ 
+  const [graphData, setGraphData] = React.useState([]);
+
+  const oneGraph = {
+    id : 1,
+    data : [
+      { x: 1, y: 2 },
+      { x: 2, y: 3 },
+      { x: 3, y: 5 },
+      { x: 4, y: 4 },
+      { x: 5, y: 7 },
+      { x: 10, y: 8 }
+  ]
+  };
 
   if (!props.estateOverview || !props.estateName) {
     return;
   }
-
 
   return (
     <Box sx={{ flexGrow: 1, bgcolor: 'background.paper' }}>
@@ -38,8 +55,8 @@ function EstateOverview(props) {
 
 
       </List>
-      <PropertyGraph>
-        
+      <PropertyGraph graphData={ graphData}>
+
       </PropertyGraph>
 
       
