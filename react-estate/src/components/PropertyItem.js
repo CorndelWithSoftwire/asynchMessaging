@@ -17,17 +17,17 @@ import Box from '@mui/material/Box';
 
 function PropertyItem(props) {
 
-    const [open, setOpen] = React.useState(false);
+    
 
     const handleClick = () => {
-        //setOpen(!open);
+        props.thermostatHandler(props);
     };
 
     if (!props.name) {
         return;
     }
 
-    
+
     return (
         
             <Box key={props.name}>

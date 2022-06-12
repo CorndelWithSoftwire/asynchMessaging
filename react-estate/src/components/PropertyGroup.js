@@ -24,19 +24,6 @@ function PropertyGroup(props) {
 
     const handleClick = () => {
         setOpen(!open);
-        const oneGraph = {
-            id: 1,
-            data: [
-              { x: 1, y: 2 },
-              { x: 2, y: 3 },
-              { x: 3, y: 5 },
-              { x: 4, y: 4 },
-              { x: 5, y: 7 },
-              { x: 10, y: 8 }
-            ]
-          };
-        const graphData = [oneGraph]
-        props.setGraphData(graphData);
     };
 
     if (!props.name) {
@@ -45,23 +32,29 @@ function PropertyGroup(props) {
 
     return (
         <Box key={props.name} >
-        <ListItemButton  onClick={handleClick}>
+            <ListItemButton onClick={handleClick}>
                 <ListItemIcon >
                     <InboxIcon />
                 </ListItemIcon>
-                <ListItemText  primary={props.name} />
-                {open ? <ExpandLess /> : <ExpandMore  />}
+                <ListItemText primary={props.name} />
+                {open ? <ExpandLess /> : <ExpandMore />}
             </ListItemButton>
-           
+
             <Collapse in={open} timeout="auto" unmountOnExit>
-                <List  component="div" disablePadding>
-                     {props.children.map((group) => PropertyItem(group))}
+                <List component="div" disablePadding>
+                    {
+                        props.children.map(
+                            (item) =>  <PropertyItem thermostatHandler={props.thermostatHandler} 
+                                                     groupId={props.id}
+                                                     key={item.id} {...item} /> 
+                        )
+                    }
                 </List>
             </Collapse>
 
         </Box>
 
-      
+
 
     );
 }

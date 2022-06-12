@@ -1,7 +1,7 @@
 
 import '../App.css';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { Client } from "paho-mqtt";
 
 import AppBar from '@mui/material/AppBar';
@@ -15,25 +15,49 @@ import EstateOverview from "./EstateOverview.js";
 
 function Estate(props) {
 
-  const [estateOverview, setEstateOverview] = useState( 
-         { "propertyGroups" : [] }
-      );
-  
+  const [estateOverview, setEstateOverview] = useState(
+    { "propertyGroups": [] }
+  );
+
+  const [graphTopic, setGraphTopic] = useState();
+
   const overviewTopic = props.estateName + "/Overview";
   const thermostatsTopic = props.estateName + "/online/thermostats";
+  const oneThermostatTopic = props.estateName + "/thermostats";
+  const msgClient = useRef(null);
 
+  function handleThermostatSelected(thermostat) {
+    console.log("thermostat selected:", thermostat)
+    const topic = `${oneThermostatTopic}/${thermostat.groupId}/${thermostat.id}`;
+    console.log(`topic: ${topic}`);
+    setGraphTopic(topic);
+  }
+
+  useEffect(
+    () => {
+      if (graphTopic && msgClient.current) {
+        msgClient.current.subscribe(graphTopic);
+      }
+    }
+  )
+
+  // manage connection and overview subscriptions
   useEffect(() => {
 
-    const myClient = new Client("localhost", 61614, "estateMonitor");
-    myClient.onConnectionLost = (e) => onConnectionLost(e);
-    myClient.onMessageArrived = (m) => onMessageArrived(m);
-    myClient.connect({ onSuccess: () => onConnect() });
+    if (msgClient.current != null) {
+      // if already connected, nothing to do
+      return;
+    }
+    msgClient.current = new Client("localhost", 61614, "estateMonitor");
+    msgClient.current.onConnectionLost = (e) => onConnectionLost(e);
+    msgClient.current.onMessageArrived = (m) => onMessageArrived(m);
+    msgClient.current.connect({ onSuccess: () => onConnect() });
 
     function onConnect() {
       // Once a connection has been made, make a subscription and send a message.
       console.log("onConnect");
-      myClient.subscribe(overviewTopic);
-      myClient.subscribe(thermostatsTopic);
+      msgClient.current.subscribe(overviewTopic);
+      msgClient.current.subscribe(thermostatsTopic);
     }
 
     function onConnectionLost(responseObject) {
@@ -50,6 +74,7 @@ function Estate(props) {
       } else if (message.topic === "estate/online/thermostats") {
         //thisEstate.processThermostatStatus(message);
       } else {
+        console.log("graphit: ", message);
         //thisEstate.processThermostatData(message);
       }
     }
@@ -71,10 +96,10 @@ function Estate(props) {
           <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
             Estate Monitor - {props.estateName}
           </Typography>
-          
+
         </Toolbar>
       </AppBar>
-      <EstateOverview estateName={props.estateName}  estateOverview={estateOverview} />
+      <EstateOverview estateName={props.estateName} estateOverview={estateOverview} thermostatHandler={handleThermostatSelected} />
     </Box>
   );
 }
