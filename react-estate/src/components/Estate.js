@@ -46,7 +46,6 @@ function Estate(props) {
       if (message.topic === overviewTopic) {
         // TODO - validate message
         let estateOverview = JSON.parse(message.payloadString);
-      
         setEstateOverview(estateOverview);
       } else if (message.topic === "estate/online/thermostats") {
         //thisEstate.processThermostatStatus(message);

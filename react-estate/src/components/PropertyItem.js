@@ -17,7 +17,7 @@ import Box from '@mui/material/Box';
 
 function PropertyItem(props) {
 
-    //const [open, setOpen] = React.useState(false);
+    const [open, setOpen] = React.useState(false);
 
     const handleClick = () => {
         //setOpen(!open);
@@ -27,6 +27,7 @@ function PropertyItem(props) {
         return;
     }
 
+    
     return (
         
             <Box key={props.name}>
