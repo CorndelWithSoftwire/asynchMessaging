@@ -20,6 +20,7 @@ function Estate(props) {
   );
 
   const [graphTopic, setGraphTopic] = useState();
+  const [subscribedGraphTopic, setSubscribedGraphTopic] = useState();
 
   const overviewTopic = props.estateName + "/Overview";
   const thermostatsTopic = props.estateName + "/online/thermostats";
@@ -27,18 +28,25 @@ function Estate(props) {
   const msgClient = useRef(null);
 
   function handleThermostatSelected(thermostat) {
-    console.log("thermostat selected:", thermostat)
     const topic = `${oneThermostatTopic}/${thermostat.groupId}/${thermostat.id}`;
-    console.log(`topic: ${topic}`);
-    setGraphTopic(topic);
+    setGraphTopic(topic);  
   }
 
+  // subscribe (only if new topic selected)
   useEffect(
     () => {
       if (graphTopic && msgClient.current) {
+        // remove any previous subscription
+        if (subscribedGraphTopic){
+          msgClient.current.unsubscribe(subscribedGraphTopic);
+          console.log("unsubscribed from ", subscribedGraphTopic);
+        }
         msgClient.current.subscribe(graphTopic);
+        // record subscription so that we can unsubscribe
+        setSubscribedGraphTopic(graphTopic);
+        console.log("subscribed to ", graphTopic);
       }
-    }
+    }, [graphTopic] // only when topic changes
   )
 
   // manage connection and overview subscriptions
