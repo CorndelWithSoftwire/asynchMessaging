@@ -16,20 +16,6 @@ function EstateOverview(props) {
 
   const [graphData, setGraphData] = React.useState([]);
 
-  const oneGraph = {
-    id: 1,
-    data: [
-      { x: 1, y: 2 },
-      { x: 2, y: 3 },
-      { x: 3, y: 5 },
-      { x: 4, y: 4 },
-      { x: 5, y: 7 },
-      { x: 10, y: 8 }
-    ]
-  };
-
-  //const graphData = [ oneGraph];
-
   if (!props.estateOverview || !props.estateName) {
     return;
   }
@@ -52,7 +38,7 @@ function EstateOverview(props) {
         {props.estateOverview.propertyGroups.map(
           (group) => 
             
-              <PropertyGroup key={group.id} {...group} />
+              <PropertyGroup setGraphData={setGraphData} key={group.id} {...group} />
             
           
         )}
