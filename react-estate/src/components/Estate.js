@@ -21,15 +21,52 @@ function Estate(props) {
 
   const [graphTopic, setGraphTopic] = useState();
   const [subscribedGraphTopic, setSubscribedGraphTopic] = useState();
+  const emptyGraphData = useRef([
+    {
+      id: 1,
+      data: [
+      ]
+    }
+  ]);
+  const [graphData, setGraphData] = useState(emptyGraphData.current);
 
   const overviewTopic = props.estateName + "/Overview";
   const thermostatsTopic = props.estateName + "/online/thermostats";
   const oneThermostatTopic = props.estateName + "/thermostats";
   const msgClient = useRef(null);
 
+  // callback function passed to components that may select a 
+  // thermostat to be graphed. Currently only one thermostat is graphed at a time.
   function handleThermostatSelected(thermostat) {
     const topic = `${oneThermostatTopic}/${thermostat.groupId}/${thermostat.id}`;
-    setGraphTopic(topic);  
+    setGraphTopic(topic);
+  }
+
+  // add value to current graph
+  function handleThermostatData(data) {
+
+    if (!(data && data.payloadString)) {
+      console.log("invalid data", data);
+      return;
+    }
+    const payload = JSON.parse(data.payloadString);
+    console.log("graphit: ", payload);
+
+    setGraphData(prevGraphData => addToGraphData(prevGraphData));
+
+    function addToGraphData(prevGraphData) {
+      console.log("previous data: ", prevGraphData);
+      let newGraph = { ...prevGraphData[0] };
+      if (newGraph.data.length === 0) {
+        newGraph.epoch = payload.time;
+        newGraph.data = [{ x: 0, y: payload.temperature }];
+      } else {
+        newGraph.data = [...newGraph.data, { x: payload.time - newGraph.epoch, y: payload.temperature }];
+      }
+
+      const updatedGraphData = [newGraph];
+      return updatedGraphData;
+    }
   }
 
   // subscribe (only if new topic selected)
@@ -37,16 +74,19 @@ function Estate(props) {
     () => {
       if (graphTopic && msgClient.current) {
         // remove any previous subscription
-        if (subscribedGraphTopic){
+        if (subscribedGraphTopic) {
           msgClient.current.unsubscribe(subscribedGraphTopic);
           console.log("unsubscribed from ", subscribedGraphTopic);
+          // clear graph
+          setGraphData(emptyGraphData.current);
         }
         msgClient.current.subscribe(graphTopic);
         // record subscription so that we can unsubscribe
         setSubscribedGraphTopic(graphTopic);
         console.log("subscribed to ", graphTopic);
       }
-    }, [graphTopic] // only when topic changes
+    }, [graphTopic, subscribedGraphTopic, emptyGraphData] // only when topic changes
+                    // array needs to have all referenced items even though only expect topic to change
   )
 
   // manage connection and overview subscriptions
@@ -82,8 +122,7 @@ function Estate(props) {
       } else if (message.topic === "estate/online/thermostats") {
         //thisEstate.processThermostatStatus(message);
       } else {
-        console.log("graphit: ", message);
-        //thisEstate.processThermostatData(message);
+        handleThermostatData(message);
       }
     }
   });
@@ -107,7 +146,10 @@ function Estate(props) {
 
         </Toolbar>
       </AppBar>
-      <EstateOverview estateName={props.estateName} estateOverview={estateOverview} thermostatHandler={handleThermostatSelected} />
+      <EstateOverview estateName={props.estateName}
+        estateOverview={estateOverview}
+        thermostatHandler={handleThermostatSelected}
+        graphData={graphData} />
     </Box>
   );
 }

@@ -6,28 +6,10 @@ import Box from '@mui/material/Box';
 import ListSubheader from '@mui/material/ListSubheader';
 import List from '@mui/material/List';
 
-
-
 import PropertyGroup from "./PropertyGroup.js";
 import PropertyGraph from './PropertyGraph.js';
-import { FormGroup } from '@mui/material';
 
 function EstateOverview(props) {
-
-  const [graphData, setGraphData] = React.useState([]);
-
-  const oneGraph = {
-    id: 1,
-    data: [
-      { x: 1, y: 2 },
-      { x: 2, y: 3 },
-      { x: 3, y: 5 },
-      { x: 4, y: 4 },
-      { x: 5, y: 7 },
-      { x: 10, y: 8 }
-    ]
-  };
-const exampleGraphData = [oneGraph]
 
   if (!props.estateOverview || !props.estateName) {
     return;
@@ -58,7 +40,7 @@ const exampleGraphData = [oneGraph]
 
 
       </List>
-      <PropertyGraph graphData={graphData} />
+      <PropertyGraph graphData={props.graphData} />
 
     </Box>
   );
