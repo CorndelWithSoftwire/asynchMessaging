@@ -29,11 +29,15 @@ tasks:
     before: |
         echo "PATH=${PATH}"    
     command: |       
-        activemq start             
+        activemq start
+        gp sync-done activeMqReady             
   - name: "Monitor"
     command: |
+        clear
+        gp sync-await activeMqReady
         activemq status
   - name: "Thermstat-01-01"
     command: |
+        clear
         echo "group 01, property 01"
         
