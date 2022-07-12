@@ -27,8 +27,10 @@ github:
 tasks:
   - name: "ActiveMQ"
     before: |
-        echo "PATH=${PATH}"    
-    command: |       
+        echo "PATH=${PATH}" 
+    init: |
+        npm install mqtt   
+    command: |      
         activemq start
         gp sync-done activeMqReady             
   - name: "Monitor"
