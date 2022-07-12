@@ -38,8 +38,14 @@ tasks:
         clear
         gp sync-await activeMqReady
         activemq status
+        npx mqtt sub estate/#      
   - name: "Thermstat-01-01"
     command: |
         clear
         echo "group 01, property 01"
-        
+        node thermostat.js 01 01 "The Willows"
+   - name: "Thermstat-01-02"
+    command: |
+        clear
+        echo "group 01, property 01"
+        node thermostat.js 01 02 "Owl House"       
