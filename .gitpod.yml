@@ -44,8 +44,9 @@ tasks:
         clear
         echo "group 01, property 01"
         node thermostat.js 01 01 "The Willows"
-   - name: "Thermstat-01-02"
-     command: |
+  - name: "Thermostat-01-02"
+    command: |
         clear
-        echo "group 01, property 01"
-        node thermostat.js 01 02 "Owl House"       
+        echo "group 01, property 02"
+        node thermostat.js 01 02 "The Oaks"
+       
