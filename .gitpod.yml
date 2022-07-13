@@ -38,6 +38,7 @@ tasks:
         clear
         gp sync-await activeMqReady
         activemq status
+        sleep 1 # even though activemq status is good it's not quite ready!
         npx mqtt sub estate/#      
   - name: "Thermostat-01-01"
     command: |
