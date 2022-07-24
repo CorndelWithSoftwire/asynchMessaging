@@ -39,7 +39,8 @@ tasks:
         gp sync-await activeMqReady
         activemq status
         sleep 1 # even though activemq status is good it's not quite ready!
-        npx mqtt sub estate/#      
+        # watch for temperatures falling below 20 degrees for more than 30 seconds
+        node homeMonitor.js 20 30       
   - name: "Thermostat-01-01"
     command: |
         clear
@@ -50,4 +51,9 @@ tasks:
         clear
         echo "group 01, property 02"
         node thermostat.js 01 02 "The Oaks"
+  - name: "Thermostat-02-01"
+    command: |
+        clear
+        echo "group 02, property 01"
+        node thermostat.js 02 01 "Astoria"
        
