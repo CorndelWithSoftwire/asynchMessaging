@@ -29,7 +29,9 @@ tasks:
     before: |
         echo "PATH=${PATH}" 
     init: |
-        npm install mqtt   
+        npm install mqtt 
+        cd estate
+        npm install  
     command: |      
         activemq start
         gp sync-done activeMqReady             
