@@ -74,12 +74,17 @@ const gradients = [
   ["#f72047", "#ffd200", "#1feaea"],
 ];
 
+const estatePrefix = "SunnyVista/";
+const thermostatTopicPrefix = estatePrefix + "thermostats/";
+const overviewTopic = estatePrefix + "Overview";
+const onlineTopic = estatePrefix + "thermostats";
+
 export default {
   name: "Estate",
 
   methods: {
     makeThermostatDataTopic(groupId, propertyId) {
-      return "estate/thermostats/" + groupId + "/" + propertyId;
+      return thermostatTopicPrefix + groupId + "/" + propertyId;
     },
     selectItem(item) {
       console.log("Selected ", item);
@@ -189,6 +194,8 @@ export default {
     // save "this" for use in Websocket callbacks
     const thisEstate = this;
 
+
+    //myClient = new Client("8080-corndelwith-asynchmessa-xkwu60y6tvt.ws-eu54.gitpod.io", 61614, "estateMonitor");
     myClient = new Client("localhost", 61614, "estateMonitor");
     myClient.onConnectionLost = onConnectionLost;
     myClient.onMessageArrived = onMessageArrived;
@@ -197,8 +204,8 @@ export default {
     function onConnect() {
       // Once a connection has been made, make a subscription and send a message.
       console.log("onConnect");
-      myClient.subscribe("estate/Overview");
-      myClient.subscribe("estate/online/thermostats");
+      myClient.subscribe(overviewTopic);
+      myClient.subscribe(onlineTopic);
     }
     function onConnectionLost(responseObject) {
       if (responseObject.errorCode !== 0)
@@ -207,9 +214,9 @@ export default {
 
     function onMessageArrived(message) {
       console.log("onMessageArrived:" + message.topic + ":");
-      if (message.topic === "estate/Overview") {
+      if (message.topic === overviewTopic) {
         thisEstate.processEstateOverview(message);
-      } else if (message.topic === "estate/online/thermostats") {
+      } else if (message.topic === onlineTopic) {
         thisEstate.processThermostatStatus(message);
       } else {
         thisEstate.processThermostatData(message);
