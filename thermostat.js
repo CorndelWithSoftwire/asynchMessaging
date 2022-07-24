@@ -50,7 +50,7 @@ const connectOptions = {
 
 var client = mqtt.connect('mqtt://localhost', connectOptions);
 
-let fakeTempSkew = 15;
+let fakeTempSkew = 17;
 let fakeTemp = 10;
 
 

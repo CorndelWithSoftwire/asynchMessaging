@@ -18,7 +18,7 @@
   "homepage": "https://github.com/CorndelWithSoftwire/asynchMessaging#readme",
   "dependencies": {
     "async-mqtt": "^2.6.1",
-    "mqtt": "^4.2.8",
+    "mqtt": "^4.3.7",
     "stomp-client": "^0.9.0"
   }
 }

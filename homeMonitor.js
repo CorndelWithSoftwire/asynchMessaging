@@ -39,10 +39,10 @@ if (durationText && durationText.length > 0) {
 }
 
 if (!duration) {
-    usageExit("Invalid duration, specify a numeric duration.");
+    usageExit("Invalid duration, specify a numeric duration in seconds.");
 }
 
-const durationMillis = duration * 60 * 1000;
+const durationMillis = duration * 1000;
 
 const isCleaningText = process.argv[4];
 isCleaning = (isCleaningText && isCleaningText == "c");
@@ -259,6 +259,7 @@ function processThermostatMessage(data, headers) {
                     + groupId + "/" + propertyId + ", " + JSON.stringify(data))
             }
         } else {
+            console.log("Temperature fallen below threshold " + groupId + "/" + propertyId);
             currentGroup[propertyId].belowThreshold = true;
             currentGroup[propertyId].thresholdCrossTime = data.time;
         }
