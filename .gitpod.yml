@@ -32,22 +32,8 @@ tasks:
         npm install mqtt   
     command: |      
         activemq start
-        gp sync-done activeMqReady             
-  - name: "Monitor"
-    command: |
-        clear
-        gp sync-await activeMqReady
-        activemq status
-        sleep 1 # even though activemq status is good it's not quite ready!
-        npx mqtt sub estate/#      
-  - name: "Thermostat-01-01"
-    command: |
-        clear
-        echo "group 01, property 01"
-        node thermostat.js 01 01 "The Willows"
-  - name: "Thermostat-01-02"
-    command: |
-        clear
-        echo "group 01, property 02"
-        node thermostat.js 01 02 "The Oaks"
+        echo "console on http://localhost:8161/index.html"
+            
+    
+ 
        
