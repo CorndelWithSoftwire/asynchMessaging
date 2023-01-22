@@ -1,5 +1,8 @@
 
-# List the ports to expose. Learn more https://www.gitpod.io/docs/config-ports/
+
+image:
+  file: .gitpod.Dockerfile
+
 ports:
   - port: 3000
     onOpen: open-preview
@@ -20,3 +23,31 @@ github:
     addComment: false
     # add a "Review in Gitpod" button to the pull request's description (defaults to false)
     addBadge: false
+
+tasks:
+  - name: "ActiveMQ"
+    before: |
+        echo "PATH=${PATH}" 
+    init: |
+        npm install mqtt   
+    command: |      
+        activemq start
+        gp sync-done activeMqReady             
+  - name: "Monitor"
+    command: |
+        clear
+        gp sync-await activeMqReady
+        activemq status
+        sleep 1 # even though activemq status is good it's not quite ready!
+        npx mqtt sub estate/#      
+  - name: "Thermostat-01-01"
+    command: |
+        clear
+        echo "group 01, property 01"
+        node thermostat.js 01 01 "The Willows"
+  - name: "Thermostat-01-02"
+    command: |
+        clear
+        echo "group 01, property 02"
+        node thermostat.js 01 02 "The Oaks"
+       
