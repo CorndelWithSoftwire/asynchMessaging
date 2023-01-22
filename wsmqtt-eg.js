@@ -1,15 +1,24 @@
-client = new Paho.MQTT.Client("localhost", 61614, "BrowserClientId");
+
+client = new Paho.MQTT.Client("localhost", 61614, "davemac");
 client.onConnectionLost = onConnectionLost;
 
 client.onMessageArrived = onMessageArrived;
 client.connect(
-    {onSuccess:onConnect, onFailure: onConnectionFailed}
+    
+  {
+    onSuccess: onConnect, 
+     onFailure: onConnectionFailed
+  }
 );
 
 function onConnect() {
   // Once a connection has been made, make a subscription and send a message.
   console.log("onConnect");
-  client.subscribe("home/thermostats");
+  client.subscribe("SunnyVista/online/thermostats");
+  client.subscribe("SunnyVista/thermostats/1/3");
+  client.subscribe("SunnyVista/thermostats/1/1");
+
+  client.subscribe("SunnyVista/Overview");
 };
 
 
