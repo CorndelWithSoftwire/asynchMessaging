@@ -1,7 +1,7 @@
-
+//
+// Example subscriber using Stomp
+// Demonstrates inter-working between MQTT publisher and other ActiveMQ clients
 ActiveMq = require("./ActiveMqConnection.js");
-
-// Example Subscriber
 
 ActiveMq.getConnection().then(
     ( mqConnection  ) => {

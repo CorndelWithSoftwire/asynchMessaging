@@ -1,19 +1,13 @@
 var mqtt = require('async-mqtt');
 
 const dataTopic = 'home/thermostats';
-const willTopic = 'home/status/thermostats'
+
 const connectOptions = {
-    'will': {
-        'topic': willTopic,
-        'payload': "Thermostats Dead",
-        'retain': true,
-    }
+    // TODO options to be investigated
 }
 
 var client = mqtt.connect('mqtt://localhost', connectOptions);
 
-let fakeTempSkew = 15;
-let fakeTemp = 10;
 
 let location = process.argv[2];
 if (!location || location.length == 0) {
@@ -24,41 +18,21 @@ console.log("Thermostat location: " + location);
 
 client.on("connect", () => {
     console.log("Thermostat connected ");
-    publishStatus();
     publishTelemetry();
 });
 
-// Will and Testament will publish a retained message if we die
-// Replace that with a live status when we reconnect
-// (If application had ability to shutdown cleanly, should pulish a "clean shutdown" too)
-function publishStatus(){
-    const options = {
-        "retain": true,
-    };
-    client.publish(willTopic, "Thermostat Publishing", options).then((e) => {
-        if (e) {
-            console.log("Status Error:" + JSON.stringify(e));
-        } else {
-            console.log("Status pubished ");
-        }
-
-    });
-}
-
 // publish a fake thermostat reading every 10 seconds
 function publishTelemetry() {
-    setInterval(() => {
-        fakeTempSkew++;
-        fakeTempSkew %= 20;
-
+    let temperature = 99; // TODO vary the temperature 
+    setInterval(() => { 
         const reading = {
             "location": location,
             "time": Date.now(),
-            "temperature": fakeTemp + fakeTempSkew
+            "temperature": temperature
         };
         const message = JSON.stringify(reading);
         const options = {
-            "retain": true,
+            // TODO experiment
         };
         client.publish(dataTopic, message, options).then((e) => {
             if (e) {
