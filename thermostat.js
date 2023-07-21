@@ -1,13 +1,27 @@
 var mqtt = require('async-mqtt');
 
-const dataTopic = 'home/thermostats';
-const willTopic = 'home/status/thermostats'
+const dataBaseTopic = 'home/thermostats/';
+const willBaseTopic = 'home/status/thermostats/'
+
+let fakeTempSkew = 15;
+let fakeTemp = 10;
+
+let location = process.argv[2];
+if (!location || location.length == 0) {
+    location = "hall";
+}
+
+console.log("Thermostat location: " + location);
+
+const dataTopic = dataBaseTopic + location;
+const willTopic = willBaseTopic + location;
+
 const QOS = 1;
 const connectOptions = {
     'qos': QOS,
     'will': {
         'topic': willTopic,
-        'payload': "Thermostats Dead",
+        'payload': `Thermostats ${location} Dead`,
         'retain': true,
         'qos': QOS
         // seems to have no effect in ActiveMQ
@@ -23,16 +37,6 @@ const connectOptions = {
 
 var client = mqtt.connect('mqtt://localhost', connectOptions);
 
-let fakeTempSkew = 15;
-let fakeTemp = 10;
-
-let location = process.argv[2];
-if (!location || location.length == 0) {
-    location = "hall";
-}
-
-console.log("Thermostat location: " + location);
-
 client.on("connect", () => {
     console.log("Thermostat connected ");
     publishStatus();
@@ -47,11 +51,11 @@ function publishStatus(){
         "retain": true,
         "qos" : QOS
     };
-    client.publish(willTopic, "Thermostat Publishing", options).then((e) => {
+    client.publish(willTopic, `Thermostat ${location} Publishing`, options).then((e) => {
         if (e) {
             console.log("Status info:" + JSON.stringify(e));
         } else {
-            console.log("Connection status pubished ");
+            console.log("Connection status published ");
         }
 
     });

@@ -1,14 +1,33 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="utf-8">
-    <title>Example Using MQTT Over WebSockets</title>
 
+<head>
+  <meta charset="utf-8">
+  <title>Example Using MQTT Over WebSockets</title>
+  <script src="paho-mqtt.js"></script>
+  <script src="wsmqtt-eg.js"></script>
+</head>
 
-  </head>
+<body>
+  <div>
+    <P id="status">connecting ...</P>
+  </div>
+  <br>
 
-  <body> 
-    <script src="paho-mqtt.js"></script>
-    <script src="wsmqtt-eg.js"></script>
-  </body>
-  </html>
+  <div>
+    <label for="location">Location:</label><br>
+    <input type="text" id="location" name="location">
+    <input type="button" id="subscribe" value="Subscribe">
+  </div>
+  <br>
+  <div>
+    <table>
+      <tr>
+        <th>Time</th>
+        <th>Temperature</th>
+      </tr>
+    </table>
+  </div>
+</body>
+
+</html>
